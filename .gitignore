@@ -1,0 +1,10 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.log
+
+# Local test scaffolding (not part of the extension)
+_*.js
+
+# Stray artifact dirs
+{icons}/

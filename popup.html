@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Sieve</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --surface2: #1e1e1e;
+      --border: #2a2a2a;
+      --accent: #c8f135;
+      --accent-dim: #a8d020;
+      --text: #f0f0f0;
+      --muted: #666;
+      --danger: #ff4d4d;
+      --blue: #4d9fff;
+      --purple: #a78bfa;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 360px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo {
+      width: 30px; height: 30px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .logo svg { width: 16px; height: 16px; }
+    .header-title { font-size: 15px; font-weight: 800; letter-spacing: 0.06em; }
+    .header-sub { font-size: 9px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 1px; }
+    .status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); display: inline-block; margin-right: 4px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    .toggle-wrap { margin-left: auto; }
+    .toggle { position: relative; width: 36px; height: 20px; }
+    .toggle input { opacity:0; width:0; height:0; }
+    .slider { position:absolute; inset:0; background:var(--border); border-radius:20px; cursor:pointer; transition:.2s; }
+    .slider::before { content:''; position:absolute; width:14px; height:14px; left:3px; top:3px; background:var(--muted); border-radius:50%; transition:.2s; }
+    input:checked + .slider { background: var(--accent); }
+    input:checked + .slider::before { background: var(--bg); transform: translateX(16px); }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      flex: 1; padding: 10px; text-align: center;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; cursor: pointer;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      transition: all .15s; background: none; border-top: none; border-left: none; border-right: none;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Panels ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Filter panel ── */
+    .filter-body { padding: 14px 16px; }
+    .section-label { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+
+    .region-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .rtab { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); cursor: pointer; transition: all .15s; }
+    .rtab.active { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 500; }
+
+    .presets { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+    .preset-btn {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px;
+      padding: 4px 9px; border-radius: 4px; cursor: pointer; transition: all .15s;
+    }
+    .preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .preset-btn.active { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 500; }
+
+    .alias-hint { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); min-height: 14px; margin-bottom: 12px; line-height: 1.5; }
+    .alias-hint strong { color: var(--accent); }
+
+    .input-row { display: flex; gap: 6px; margin-bottom: 14px; }
+    .keyword-input {
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px;
+      padding: 8px 11px; border-radius: 6px; outline: none; transition: border-color .15s;
+    }
+    .keyword-input::placeholder { color: var(--muted); }
+    .keyword-input:focus { border-color: var(--accent); }
+    .add-btn {
+      background: var(--accent); border: none; color: var(--bg);
+      font-size: 20px; font-weight: 700; width: 36px; border-radius: 6px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .add-btn:hover { background: var(--accent-dim); }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 5px; min-height: 28px; }
+    .tag {
+      display: flex; align-items: center; gap: 4px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 4px; padding: 3px 8px 3px 10px;
+      font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text);
+      animation: tagIn .15s ease;
+    }
+    @keyframes tagIn { from{opacity:0;transform:scale(.9)} to{opacity:1;transform:scale(1)} }
+    .tag-remove { background:none; border:none; color:var(--muted); cursor:pointer; font-size:15px; line-height:1; padding:0; transition:color .1s; }
+    .tag-remove:hover { color: var(--danger); }
+    .empty-state { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); padding: 6px 0; }
+
+    .footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .count { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
+    .count span { color: var(--accent); font-weight: 500; }
+    .clear-btn { background:none; border:1px solid var(--border); color:var(--muted); font-family:'DM Mono',monospace; font-size:10px; padding:4px 9px; border-radius:4px; cursor:pointer; transition:all .15s; }
+    .clear-btn:hover { border-color:var(--danger); color:var(--danger); }
+
+    /* ── YouTube panel ── */
+    .yt-note { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+    .yt-toggles { display: flex; flex-direction: column; }
+    .yt-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .yt-row:last-child { border-bottom: none; }
+    .yt-row-label { font-size: 12px; font-weight: 600; color: var(--text); }
+    .yt-row-desc { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+
+    /* ── Stats panel ── */
+    .stats-body { padding: 16px; }
+
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px;
+    }
+    .stat-value { font-size: 28px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+    .stat-card.accent .stat-value { color: var(--accent); }
+    .stat-card.blue .stat-value { color: var(--blue); }
+    .stat-card.purple .stat-value { color: var(--purple); }
+    .stat-card.orange .stat-value { color: #ff9a3c; }
+
+    .bar-section { margin-bottom: 16px; }
+    .bar-label { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .bar-item { margin-bottom: 8px; }
+    .bar-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .bar-name { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text); }
+    .bar-count { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
+    .bar-track { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .6s ease; }
+
+    .wellness-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px; text-align: center;
+    }
+    .wellness-emoji { font-size: 28px; margin-bottom: 6px; }
+    .wellness-msg { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .wellness-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); line-height: 1.5; }
+
+    .reset-btn { background:none; border:1px solid var(--border); color:var(--muted); font-family:'DM Mono',monospace; font-size:9px; padding:3px 8px; border-radius:4px; cursor:pointer; margin-top:10px; transition:all .15s; }
+    .reset-btn:hover { border-color:var(--danger); color:var(--danger); }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <svg viewBox="0 0 16 16" fill="none">
+      <line x1="2" y1="4" x2="14" y2="4" stroke="#0d0d0d" stroke-width="2" stroke-linecap="round"/>
+      <line x1="4" y1="8" x2="12" y2="8" stroke="#0d0d0d" stroke-width="2" stroke-linecap="round"/>
+      <line x1="6" y1="12" x2="10" y2="12" stroke="#0d0d0d" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div>
+    <div class="header-title">SIEVE</div>
+    <div class="header-sub"><span class="status-dot"></span>filtering your internet</div>
+  </div>
+  <div class="toggle-wrap">
+    <label class="toggle">
+      <input type="checkbox" id="enableToggle" checked/>
+      <span class="slider"></span>
+    </label>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="filter">⚙ Filter</button>
+  <button class="tab" data-tab="youtube">▶ YouTube</button>
+  <button class="tab" data-tab="stats">📊 Stats</button>
+</div>
+
+<!-- FILTER PANEL -->
+<div class="panel active" id="panel-filter">
+  <div class="filter-body">
+    <div class="section-label">Presets by region</div>
+    <div class="region-tabs">
+      <button class="rtab active" data-region="india">🇮🇳 India</button>
+      <button class="rtab" data-region="western">🌍 Western</button>
+    </div>
+
+    <div class="presets" id="presets-india">
+      <button class="preset-btn" data-kw="Cricket">🏏 Cricket</button>
+      <button class="preset-btn" data-kw="Football">⚽ Football</button>
+      <button class="preset-btn" data-kw="Bollywood">🎬 Bollywood</button>
+      <button class="preset-btn" data-kw="IPL">🏆 IPL</button>
+      <button class="preset-btn" data-kw="Politics">🗳 Politics</button>
+      <button class="preset-btn" data-kw="Stock Market">📈 Stocks</button>
+      <button class="preset-btn" data-kw="Celebrity">⭐ Celebrity</button>
+      <button class="preset-btn" data-kw="Reality TV">📺 Reality TV</button>
+    </div>
+
+    <div class="presets" id="presets-western" style="display:none">
+      <button class="preset-btn" data-kw="NFL">🏈 NFL</button>
+      <button class="preset-btn" data-kw="NBA">🏀 NBA</button>
+      <button class="preset-btn" data-kw="Kardashians">💅 Kardashians</button>
+      <button class="preset-btn" data-kw="Trump">🇺🇸 Trump</button>
+      <button class="preset-btn" data-kw="TikTok Drama">📱 TikTok</button>
+      <button class="preset-btn" data-kw="Crypto">₿ Crypto</button>
+      <button class="preset-btn" data-kw="War News">💣 War News</button>
+      <button class="preset-btn" data-kw="US Politics">🏛 US Politics</button>
+    </div>
+
+    <div class="alias-hint" id="aliasHint"></div>
+
+    <div class="section-label">Custom keyword</div>
+    <div class="input-row">
+      <input class="keyword-input" id="kwInput" type="text" placeholder="e.g. Elon Musk, WWE…" maxlength="40"/>
+      <button class="add-btn" id="addBtn">+</button>
+    </div>
+
+    <div class="section-label">Blocked topics</div>
+    <div class="tags" id="tagContainer">
+      <span class="empty-state">No filters yet.</span>
+    </div>
+  </div>
+  <div class="footer">
+    <div class="count">Blocking <span id="kwCount">0</span> topics</div>
+    <button class="clear-btn" id="clearBtn">Clear all</button>
+  </div>
+</div>
+
+<!-- YOUTUBE PANEL -->
+<div class="panel" id="panel-youtube">
+  <div class="filter-body">
+    <div class="section-label">Hide on YouTube</div>
+    <div class="yt-note">Each switch hides only that element. Nothing else is touched.</div>
+    <div class="yt-toggles" id="ytToggles"></div>
+
+    <div class="section-label" style="margin-top:18px">Block channels from your feed</div>
+    <div class="input-row">
+      <input class="keyword-input" id="chInput" type="text" placeholder="e.g. T-Series, @MrBeast…" maxlength="60"/>
+      <button class="add-btn" id="chAddBtn">+</button>
+    </div>
+    <div class="tags" id="chContainer">
+      <span class="empty-state">No channels blocked.</span>
+    </div>
+  </div>
+  <div class="footer">
+    <div class="count">Blocking <span id="chCount">0</span> channels</div>
+    <button class="clear-btn" id="chClearBtn">Clear all</button>
+  </div>
+</div>
+
+<!-- STATS PANEL -->
+<div class="panel" id="panel-stats">
+  <div class="stats-body">
+    <div class="stat-grid">
+      <div class="stat-card accent">
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-label">Total blocked</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-value" id="statToday">0</div>
+        <div class="stat-label">Blocked today</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-value" id="statStreak">0</div>
+        <div class="stat-label">Day streak 🔥</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-value" id="statTopics">0</div>
+        <div class="stat-label">Topics filtered</div>
+      </div>
+    </div>
+
+    <div class="bar-section">
+      <div class="bar-label">Top blocked topics</div>
+      <div id="barList"></div>
+    </div>
+
+    <div class="wellness-card">
+      <div class="wellness-emoji" id="wellnessEmoji">🧘</div>
+      <div class="wellness-msg" id="wellnessMsg">Your feed, your rules.</div>
+      <div class="wellness-sub" id="wellnessSub">Add filters and start reclaiming your attention.</div>
+      <button class="reset-btn" id="resetStats">Reset stats</button>
+    </div>
+  </div>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

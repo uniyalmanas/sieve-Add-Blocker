@@ -1,0 +1,353 @@
+// Sieve - Content Script v3
+// Blocks headlines, thumbnails, cards, channels by keyword + aliases
+// Tracks block stats and reports them to storage
+
+const BLOCKED_ATTR = 'data-sieve-blocked';
+const OBSERVER_THROTTLE_MS = 300;
+
+const ALIAS_MAP = {
+  // Indian topics
+  'cricket':      ['ipl', 'bcci', 't20', 'odi', 'test match', 'virat kohli', 'rohit sharma',
+                   'ms dhoni', 'bumrah', 'shubman gill', 'hardik pandya', 'rcb', 'csk', 'mi ',
+                   'kkr', 'srh', 'dc ', 'lsg', 'pbks', 'gt ', 'world cup cricket', 'ranji',
+                   'क्रिकेट', 'विराट कोहली', 'रोहित शर्मा', 'धोनी', 'टीम इंडिया', 'गेंदबाज', 'बल्लेबाज'],
+  'football':     ['fifa', 'uefa', 'premier league', 'la liga', 'bundesliga', 'serie a',
+                   'ronaldo', 'messi', 'mbappe', 'neymar', 'champions league', 'epl',
+                   'transfer window', 'isl ', 'goal ', 'फुटबॉल', 'रोनाल्डो', 'मेसी'],
+  'bollywood':    ['box office', 'srk', 'shah rukh', 'salman khan', 'aamir khan',
+                   'deepika', 'ranveer', 'karan johar', 'dharma', 'yash raj',
+                   'akshay kumar', 'katrina', 'film review', 'trailer launch', 'first look',
+                   'priyanka chopra', 'anushka', 'ranbir',
+                   'बॉलीवुड', 'शाहरुख', 'सलमान', 'आमिर', 'अक्षय', 'दीपिका', 'बॉक्स ऑफिस', 'फिल्म'],
+  'ipl':          ['ipl', 't20 league', 'rcb', 'csk', 'mi ', 'kkr', 'srh', 'pbks',
+                   'dc ', 'lsg', 'gt ', 'ipl auction', 'mega auction', 'आईपीएल'],
+  'politics':     ['modi', 'rahul gandhi', 'bjp', 'congress party', 'aap ', 'kejriwal',
+                   'election commission', 'lok sabha', 'rajya sabha', 'pm modi',
+                   'parliament session', 'manifesto', 'by-election',
+                   'मोदी', 'राहुल गांधी', 'भाजपा', 'कांग्रेस', 'केजरीवाल', 'लोकसभा', 'चुनाव', 'संसद'],
+  'stock market': ['sensex', 'nifty', 'bse', 'nse', 'stock crash', 'market rally',
+                   'ipo ', 'mutual fund', 'share price', 'equity market', 'bull run',
+                   'bear market', 'sebi', 'सेंसेक्स', 'निफ्टी', 'शेयर बाजार', 'म्यूचुअल फंड'],
+  'celebrity':    ['paparazzi', 'red carpet', 'award night', 'filmfare', 'iifa',
+                   'spotted at', 'breakup', 'relationship', 'wedding rumour'],
+  'reality tv':   ['bigg boss', 'kbc ', 'kaun banega', 'indian idol', 'dance india',
+                   'jhalak dikhhla', 'roadies', 'splitsvilla', 'masterchef india',
+                   'the voice india', 'fear factor', 'बिग बॉस', 'इंडियन आइडल'],
+  // Western topics
+  'nfl':          ['super bowl', 'touchdown', 'quarterback', 'tom brady', 'patrick mahomes',
+                   'fantasy football nfl', 'nfl draft', 'monday night football'],
+  'nba':          ['lakers', 'celtics', 'lebron james', 'stephen curry', 'nba finals',
+                   'nba draft', 'slam dunk', 'nba trade'],
+  'kardashians':  ['kim kardashian', 'kylie jenner', 'kendall jenner', 'khloe', 'kourtney',
+                   'kris jenner', 'travis scott', 'skims', 'keeping up'],
+  'trump':        ['donald trump', 'trump tower', 'mar-a-lago', 'truth social',
+                   'maga ', 'trump trial', 'trump rally'],
+  'tiktok drama': ['tiktok ban', 'tiktok drama', 'tiktoker', 'tiktok trend',
+                   'viral tiktok', 'tiktok influencer'],
+  'crypto':       ['bitcoin', 'ethereum', 'crypto crash', 'dogecoin', 'nft ', 'web3',
+                   'blockchain hype', 'altcoin', 'crypto market', 'defi '],
+  'war news':     ['airstrike', 'ceasefire', 'casualty count', 'war update',
+                   'conflict zone', 'missile attack', 'drone strike'],
+  'us politics':  ['biden', 'democrats', 'republicans', 'gop ', 'congress vote',
+                   'senate hearing', 'white house', 'oval office', 'filibuster'],
+};
+
+const YT_CARD_SELECTORS = [
+  'ytd-rich-item-renderer',
+  'ytd-video-renderer',
+  'ytd-compact-video-renderer',
+  'ytd-grid-video-renderer',
+  'ytd-reel-item-renderer',
+  'ytd-shelf-renderer',
+  'ytd-movie-renderer',
+  'ytd-playlist-renderer',
+  'ytd-channel-renderer',
+  'ytd-radio-renderer',
+];
+
+const TITLE_SELECTORS = [
+  'h1', 'h2', 'h3', 'h4',
+  '#video-title', 'yt-formatted-string',
+  '[class*="title"]', '[class*="headline"]',
+  'a[href]', 'span', 'p',
+];
+
+let blockedKeywords = [];
+let compiledMatchers = []; // [{ regex, keyword }] — regex per alias, mapped back to the user keyword
+let blockedChannels = [];  // YouTube channel names/handles to hide from feeds
+let ytSettings = {};       // { shorts, comments, likes, recommended, endscreen, homefeed, livechat }
+let enabled = true;
+
+// ── YouTube selective element hiding ──
+// Each toggle adds a class on <html>; CSS below hides ONLY that element type,
+// so flipping "Comments" leaves likes/shorts/etc. untouched.
+const YT_STYLE_ID = 'sieve-yt-style';
+const YT_KEYS = ['shorts', 'comments', 'likes', 'recommended', 'endscreen', 'homefeed', 'livechat'];
+const YT_CSS = `
+/* Shorts — shelves, sidebar entries, and individual reels in any feed */
+html.sieve-yt-shorts ytd-rich-shelf-renderer[is-shorts],
+html.sieve-yt-shorts ytd-reel-shelf-renderer,
+html.sieve-yt-shorts ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+html.sieve-yt-shorts ytd-guide-entry-renderer:has(a[title="Shorts"]),
+html.sieve-yt-shorts ytd-mini-guide-entry-renderer[aria-label="Shorts"],
+html.sieve-yt-shorts ytd-rich-item-renderer:has(a[href^="/shorts"]),
+html.sieve-yt-shorts ytd-video-renderer:has(a[href^="/shorts"]),
+html.sieve-yt-shorts ytd-reel-item-renderer,
+html.sieve-yt-shorts grid-shelf-view-model { display: none !important; }
+
+/* Comments (watch page) */
+html.sieve-yt-comments ytd-comments#comments,
+html.sieve-yt-comments #comments.ytd-watch-flexy { display: none !important; }
+
+/* Like / Dislike buttons (watch page) */
+html.sieve-yt-likes #top-level-buttons-computed segmented-like-dislike-button-view-model,
+html.sieve-yt-likes ytd-watch-metadata segmented-like-dislike-button-view-model,
+html.sieve-yt-likes like-button-view-model,
+html.sieve-yt-likes dislike-button-view-model { display: none !important; }
+
+/* Recommended / "Up next" sidebar (watch page) */
+html.sieve-yt-recommended #related,
+html.sieve-yt-recommended ytd-watch-next-secondary-results-renderer { display: none !important; }
+
+/* End-screen suggested cards (in-player) */
+html.sieve-yt-endscreen .ytp-ce-element,
+html.sieve-yt-endscreen .ytp-endscreen-content { display: none !important; }
+
+/* Home feed — scoped to the homepage only */
+html.sieve-yt-homefeed ytd-browse[page-subtype="home"] ytd-rich-grid-renderer { display: none !important; }
+
+/* Live chat (streams) */
+html.sieve-yt-livechat ytd-live-chat-frame#chat,
+html.sieve-yt-livechat #chat-container { display: none !important; }
+`;
+
+function isYouTube() {
+  return window.location.hostname.includes('youtube.com');
+}
+
+function injectYtStyle() {
+  if (!isYouTube() || document.getElementById(YT_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = YT_STYLE_ID;
+  style.textContent = YT_CSS;
+  (document.head || document.documentElement).appendChild(style);
+}
+
+function applyYtSettings() {
+  if (!isYouTube()) return;
+  injectYtStyle();
+  const root = document.documentElement;
+  YT_KEYS.forEach(key => {
+    // Master toggle off => stop hiding everything, even YouTube elements.
+    root.classList.toggle('sieve-yt-' + key, enabled && !!ytSettings[key]);
+  });
+}
+
+// Returns the original blocked-channel entry that matches, or null.
+function channelBlocked(channelText) {
+  const c = (channelText || '').trim().toLowerCase();
+  if (!c) return null;
+  for (const orig of blockedChannels) {
+    const b = orig.trim().toLowerCase();
+    if (b && (c === b || c.includes(b))) return orig;
+  }
+  return null;
+}
+
+// Stats tracking
+let sessionBlocked = 0;
+
+function normalize(text) {
+  // Keep latin alphanumerics AND Devanagari (U+0900–U+097F) so Hindi
+  // headlines survive; everything else collapses to whitespace.
+  return (text || '').toLowerCase().replace(/[^a-z0-9ऀ-ॿ\s]/g, ' ');
+}
+
+// Build a whole-word matcher for a term. Internal spaces become flexible
+// whitespace; boundaries are any non-word char (or string edge), where
+// "word" spans latin + Devanagari. Short codes like "mi" / "dc" match
+// standalone tokens but NOT inside words ("Xiaomi"), and Hindi terms get
+// Devanagari-aware boundaries instead of latin-only ones.
+function buildMatcher(term) {
+  const t = term.trim().toLowerCase();
+  if (!t) return null;
+  const escaped = t
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // escape regex metachars
+    .replace(/\s+/g, '\\s+');               // collapse internal whitespace
+  return new RegExp(`(?:^|[^a-z0-9\\u0900-\\u097f])${escaped}(?:[^a-z0-9\\u0900-\\u097f]|$)`);
+}
+
+function compileMatchers(raw) {
+  const matchers = [];
+  raw.forEach(kw => {
+    const k = kw.trim().toLowerCase();
+    if (!k) return;
+    const terms = new Set([k, ...(ALIAS_MAP[k] || []).map(a => a.trim().toLowerCase())]);
+    terms.forEach(term => {
+      const regex = buildMatcher(term);
+      if (regex) matchers.push({ regex, keyword: kw }); // map alias -> original keyword
+    });
+  });
+  return matchers;
+}
+
+function getMatchedKeyword(text) {
+  const n = normalize(text);
+  for (const { regex, keyword } of compiledMatchers) {
+    if (regex.test(n)) return keyword; // return original user keyword
+  }
+  return null;
+}
+
+function recordBlock(keyword) {
+  sessionBlocked++;
+  const today = new Date().toISOString().split('T')[0];
+  chrome.storage.local.get(['stats'], (result) => {
+    const stats = result.stats || { total: 0, today: 0, date: today, byKeyword: {}, streak: 0, lastActiveDate: null };
+    if (stats.date !== today) {
+      stats.today = 0;
+      stats.date = today;
+      // streak logic
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yStr = yesterday.toISOString().split('T')[0];
+      stats.streak = (stats.lastActiveDate === yStr) ? (stats.streak || 0) + 1 : 1;
+    }
+    stats.total = (stats.total || 0) + 1;
+    stats.today = (stats.today || 0) + 1;
+    stats.lastActiveDate = today;
+    stats.byKeyword = stats.byKeyword || {};
+    const kLower = keyword.toLowerCase();
+    stats.byKeyword[kLower] = (stats.byKeyword[kLower] || 0) + 1;
+    chrome.storage.local.set({ stats });
+  });
+}
+
+function getContainer(el) {
+  if (window.location.hostname.includes('youtube.com')) {
+    let node = el;
+    while (node && node !== document.body) {
+      if (YT_CARD_SELECTORS.some(s => node.matches?.(s))) return node;
+      node = node.parentElement;
+    }
+  }
+  let node = el;
+  while (node && node !== document.body) {
+    if (node.matches?.('article, li, [class*="card"], [class*="story"], [class*="post"], [class*="item"]'))
+      return node;
+    node = node.parentElement;
+  }
+  return el;
+}
+
+function blockElement(el, keyword) {
+  const container = getContainer(el);
+  if (container.getAttribute(BLOCKED_ATTR)) return;
+  container.setAttribute(BLOCKED_ATTR, 'true');
+  container.style.setProperty('display', 'none', 'important');
+  if (keyword) recordBlock(keyword);
+}
+
+function unblockAll() {
+  document.querySelectorAll(`[${BLOCKED_ATTR}]`).forEach(el => {
+    el.removeAttribute(BLOCKED_ATTR);
+    el.style.removeProperty('display');
+  });
+}
+
+function filterPage() {
+  if (!enabled) return;
+
+  if (isYouTube()) {
+    applyYtSettings(); // keep element-hiding classes alive across SPA navigation
+    if (!compiledMatchers.length && !blockedChannels.length) return;
+    document.querySelectorAll(YT_CARD_SELECTORS.join(', ')).forEach(card => {
+      if (card.getAttribute(BLOCKED_ATTR)) return;
+      const titleEl = card.querySelector(TITLE_SELECTORS.join(', '));
+      const text = titleEl?.innerText || titleEl?.textContent || card.innerText || '';
+      const channelEl = card.querySelector('#channel-name, #text.ytd-channel-name, .ytd-channel-name');
+      const channel = channelEl?.innerText || '';
+      // Channel blocklist takes priority over keyword matching.
+      const blockedCh = channelBlocked(channel);
+      if (blockedCh) {
+        card.setAttribute(BLOCKED_ATTR, 'true');
+        card.style.setProperty('display', 'none', 'important');
+        recordBlock(blockedCh);
+        return;
+      }
+      const kw = getMatchedKeyword(text + ' ' + channel);
+      if (kw) {
+        card.setAttribute(BLOCKED_ATTR, 'true');
+        card.style.setProperty('display', 'none', 'important');
+        recordBlock(kw);
+      }
+    });
+    return;
+  }
+
+  if (!compiledMatchers.length) return;
+  TITLE_SELECTORS.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      const text = el.innerText || el.textContent || el.getAttribute('href') || '';
+      const kw = getMatchedKeyword(text);
+      if (kw) blockElement(el, kw);
+    });
+  });
+}
+
+let filterTimer = null;
+const observer = new MutationObserver(() => {
+  if (!enabled) return;
+  // Element hiding is pure CSS; only schedule a scan if there's text/channel work.
+  if (!compiledMatchers.length && !blockedChannels.length) return;
+  clearTimeout(filterTimer);
+  filterTimer = setTimeout(filterPage, OBSERVER_THROTTLE_MS);
+});
+
+function init() {
+  chrome.storage.sync.get(
+    ['blockedKeywords', 'filterEnabled', 'blockedChannels', 'ytSettings'],
+    (result) => {
+      blockedKeywords = result.blockedKeywords || [];
+      enabled = result.filterEnabled !== false;
+      blockedChannels = result.blockedChannels || [];
+      ytSettings = result.ytSettings || {};
+      compiledMatchers = compileMatchers(blockedKeywords);
+      applyYtSettings();
+      filterPage();
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+  );
+}
+
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === 'KEYWORDS_UPDATED') {
+    blockedKeywords = msg.keywords || [];
+    enabled = msg.enabled !== false;
+    blockedChannels = msg.channels || [];
+    ytSettings = msg.yt || {};
+    compiledMatchers = compileMatchers(blockedKeywords);
+    applyYtSettings();
+    unblockAll();
+    filterPage();
+  }
+});
+
+// Keep every tab (not just the active one) in sync when settings change.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'sync') return;
+  if (!changes.blockedKeywords && !changes.filterEnabled &&
+      !changes.blockedChannels && !changes.ytSettings) return;
+  if (changes.blockedKeywords) {
+    blockedKeywords = changes.blockedKeywords.newValue || [];
+    compiledMatchers = compileMatchers(blockedKeywords);
+  }
+  if (changes.filterEnabled) enabled = changes.filterEnabled.newValue !== false;
+  if (changes.blockedChannels) blockedChannels = changes.blockedChannels.newValue || [];
+  if (changes.ytSettings) ytSettings = changes.ytSettings.newValue || {};
+  applyYtSettings();
+  unblockAll();
+  filterPage();
+});
+
+init();
