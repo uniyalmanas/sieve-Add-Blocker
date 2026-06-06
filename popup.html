@@ -140,6 +140,29 @@
     .yt-row-label { font-size: 12px; font-weight: 600; color: var(--text); }
     .yt-row-desc { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
 
+    /* ── Focus panel ── */
+    .day-row { display: flex; gap: 5px; }
+    .day-btn { flex: 1; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; padding: 7px 0; border-radius: 5px; cursor: pointer; transition: all .15s; }
+    .day-btn.active { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 500; }
+    .time-row { display: flex; align-items: center; gap: 10px; }
+    .time-input { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; padding: 7px 10px; border-radius: 6px; outline: none; }
+    .time-input:focus { border-color: var(--accent); }
+    .time-dash { color: var(--muted); font-size: 13px; }
+    .status-banner { margin-top: 16px; padding: 10px 12px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 11px; line-height: 1.5; text-align: center; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+    .status-banner.on  { border-color: var(--accent); color: var(--accent); }
+    .status-banner.locked { border-color: var(--purple); color: var(--purple); }
+
+    /* ── Focus dashboard (stats) ── */
+    .reclaim-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
+    .reclaim-emoji { font-size: 26px; }
+    .reclaim-value { font-size: 20px; font-weight: 800; color: var(--accent); line-height: 1; }
+    .reclaim-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-top: 4px; }
+    .week-chart { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; height: 70px; }
+    .week-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+    .week-bar { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; transition: height .5s ease; }
+    .week-bar.empty { background: var(--surface2); }
+    .week-day { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted); }
+
     /* ── Stats panel ── */
     .stats-body { padding: 16px; }
 
@@ -201,6 +224,7 @@
 <div class="tabs">
   <button class="tab active" data-tab="filter">⚙ Filter</button>
   <button class="tab" data-tab="youtube">▶ YouTube</button>
+  <button class="tab" data-tab="focus">⏱ Focus</button>
   <button class="tab" data-tab="stats">📊 Stats</button>
 </div>
 
@@ -276,6 +300,56 @@
   </div>
 </div>
 
+<!-- FOCUS PANEL -->
+<div class="panel" id="panel-focus">
+  <div class="filter-body">
+    <div class="yt-row" style="border-bottom:1px solid var(--border)">
+      <div>
+        <div class="yt-row-label">Focus Mode schedule</div>
+        <div class="yt-row-desc">Only filter during set hours. Off = always on.</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="schedEnabled"/>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div id="schedConfig" style="opacity:.4; pointer-events:none">
+      <div class="section-label" style="margin-top:14px">Active days</div>
+      <div class="day-row" id="dayRow">
+        <button class="day-btn" data-day="1">M</button>
+        <button class="day-btn" data-day="2">T</button>
+        <button class="day-btn" data-day="3">W</button>
+        <button class="day-btn" data-day="4">T</button>
+        <button class="day-btn" data-day="5">F</button>
+        <button class="day-btn" data-day="6">S</button>
+        <button class="day-btn" data-day="0">S</button>
+      </div>
+
+      <div class="section-label" style="margin-top:14px">Active hours</div>
+      <div class="time-row">
+        <input type="time" id="schedStart" class="time-input" value="09:00"/>
+        <span class="time-dash">→</span>
+        <input type="time" id="schedEnd" class="time-input" value="17:00"/>
+      </div>
+      <div class="alias-hint" id="schedHint" style="margin-top:8px"></div>
+
+      <div class="yt-row" style="margin-top:6px">
+        <div>
+          <div class="yt-row-label">🔒 Strict Mode</div>
+          <div class="yt-row-desc">Lock settings during the window — no disabling, no edits until it ends.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="schedStrict"/>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="status-banner" id="focusStatus"></div>
+  </div>
+</div>
+
 <!-- STATS PANEL -->
 <div class="panel" id="panel-stats">
   <div class="stats-body">
@@ -296,6 +370,19 @@
         <div class="stat-value" id="statTopics">0</div>
         <div class="stat-label">Topics filtered</div>
       </div>
+    </div>
+
+    <div class="reclaim-card">
+      <div class="reclaim-emoji">⏳</div>
+      <div>
+        <div class="reclaim-value" id="reclaimValue">0 min</div>
+        <div class="reclaim-label">attention reclaimed (est.)</div>
+      </div>
+    </div>
+
+    <div class="bar-section">
+      <div class="bar-label">Last 7 days</div>
+      <div class="week-chart" id="weekChart"></div>
     </div>
 
     <div class="bar-section">

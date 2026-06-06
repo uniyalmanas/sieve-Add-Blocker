@@ -3,7 +3,11 @@
 let keywords = [];
 let channels = [];
 let ytSettings = {};
+let schedule = {};   // { enabled, days:[], start, end, strict }
 let enabled = true;
+
+// Rough estimate: each blocked item ~= 8 seconds of attention not lost.
+const SECONDS_PER_BLOCK = 8;
 
 // YouTube selective-hide toggles (order = display order)
 const YT_OPTIONS = [
@@ -56,6 +60,14 @@ const chInput        = document.getElementById('chInput');
 const chAddBtn       = document.getElementById('chAddBtn');
 const chClearBtn     = document.getElementById('chClearBtn');
 const chCount        = document.getElementById('chCount');
+const schedEnabled   = document.getElementById('schedEnabled');
+const schedConfig    = document.getElementById('schedConfig');
+const schedStart     = document.getElementById('schedStart');
+const schedEnd       = document.getElementById('schedEnd');
+const schedStrict    = document.getElementById('schedStrict');
+const schedHint      = document.getElementById('schedHint');
+const focusStatus    = document.getElementById('focusStatus');
+const dayRow         = document.getElementById('dayRow');
 
 // ── Tab switching ──
 document.querySelectorAll('.tab').forEach(tab => {
@@ -65,6 +77,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active');
     document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'stats') loadStats();
+    if (tab.dataset.tab === 'focus') renderSchedule();
   });
 });
 
@@ -87,6 +100,7 @@ function save() {
     filterEnabled: enabled,
     blockedChannels: channels,
     ytSettings,
+    schedule,
   }, notifyTab);
 }
 
@@ -94,7 +108,7 @@ function notifyTab() {
   chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
     if (tabs[0]?.id) {
       chrome.tabs.sendMessage(tabs[0].id, {
-        type: 'KEYWORDS_UPDATED', keywords, enabled, channels, yt: ytSettings
+        type: 'KEYWORDS_UPDATED', keywords, enabled, channels, yt: ytSettings, schedule
       }).catch(() => {});
     }
   });
@@ -194,6 +208,92 @@ chContainer.addEventListener('click', e => {
 });
 chClearBtn.addEventListener('click', () => { if (!channels.length) return; channels = []; save(); renderChannels(); });
 
+// ── Focus Mode (schedule + strict) ──
+function toMin(hhmm) {
+  const [h, m] = String(hhmm || '').split(':').map(Number);
+  return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
+}
+
+// Mirrors content.js withinSchedule — true when a schedule window is active now.
+function withinSchedule() {
+  if (!schedule.enabled || !(schedule.days || []).length) return false;
+  const start = toMin(schedule.start), end = toMin(schedule.end);
+  const now = new Date();
+  const day = now.getDay(), cur = now.getHours() * 60 + now.getMinutes();
+  if (start === end) return false;
+  if (start < end) return schedule.days.includes(day) && cur >= start && cur < end;
+  if (cur >= start) return schedule.days.includes(day);
+  if (cur < end) return schedule.days.includes((day + 6) % 7);
+  return false;
+}
+
+// Strict lock is active only while inside a strict-mode window.
+function isLocked() {
+  return !!(schedule.enabled && schedule.strict && withinSchedule());
+}
+
+function renderSchedule() {
+  schedEnabled.checked = !!schedule.enabled;
+  schedStart.value = schedule.start || '09:00';
+  schedEnd.value = schedule.end || '17:00';
+  schedStrict.checked = !!schedule.strict;
+  const days = schedule.days || [];
+  dayRow.querySelectorAll('.day-btn').forEach(b => {
+    b.classList.toggle('active', days.includes(parseInt(b.dataset.day)));
+  });
+  schedConfig.style.opacity = schedule.enabled ? '1' : '.4';
+  schedConfig.style.pointerEvents = schedule.enabled ? 'auto' : 'none';
+  renderFocusStatus();
+  applyLockState();
+}
+
+function renderFocusStatus() {
+  if (!schedule.enabled) {
+    focusStatus.className = 'status-banner on';
+    focusStatus.textContent = 'Always filtering — Focus schedule off.';
+    return;
+  }
+  const active = withinSchedule();
+  if (active && schedule.strict) {
+    focusStatus.className = 'status-banner locked';
+    focusStatus.textContent = '🔒 Strict window active — settings locked until it ends.';
+  } else if (active) {
+    focusStatus.className = 'status-banner on';
+    focusStatus.textContent = '🟢 Focus window active — filtering now.';
+  } else {
+    focusStatus.className = 'status-banner';
+    focusStatus.textContent = '⏸ Outside window — filtering paused.';
+  }
+}
+
+// Disable controls when a strict window is in force.
+function applyLockState() {
+  const locked = isLocked();
+  enableToggle.disabled = locked;
+  [addBtn, clearBtn, chAddBtn, chClearBtn, schedEnabled, schedStrict, schedStart, schedEnd].forEach(el => { if (el) el.disabled = locked; });
+  dayRow.querySelectorAll('.day-btn').forEach(b => { b.disabled = locked; });
+  document.querySelectorAll('.preset-btn, .tag-remove').forEach(b => { b.disabled = locked; });
+}
+
+schedEnabled.addEventListener('change', () => {
+  if (isLocked()) { schedEnabled.checked = true; return; }
+  schedule.enabled = schedEnabled.checked;
+  if (schedule.enabled && !(schedule.days || []).length) schedule.days = [1, 2, 3, 4, 5];
+  save(); renderSchedule();
+});
+schedStrict.addEventListener('change', () => { schedule.strict = schedStrict.checked; save(); renderSchedule(); });
+schedStart.addEventListener('change', () => { schedule.start = schedStart.value; save(); renderSchedule(); });
+schedEnd.addEventListener('change', () => { schedule.end = schedEnd.value; save(); renderSchedule(); });
+dayRow.addEventListener('click', e => {
+  const btn = e.target.closest('.day-btn');
+  if (!btn || isLocked()) return;
+  const d = parseInt(btn.dataset.day);
+  schedule.days = schedule.days || [];
+  const i = schedule.days.indexOf(d);
+  if (i > -1) schedule.days.splice(i, 1); else schedule.days.push(d);
+  save(); renderSchedule();
+});
+
 // ── Events ──
 addBtn.addEventListener('click', () => { addKeyword(kwInput.value); kwInput.value = ''; kwInput.focus(); });
 kwInput.addEventListener('keydown', e => { if (e.key === 'Enter') { addKeyword(kwInput.value); kwInput.value = ''; } });
@@ -202,7 +302,11 @@ tagContainer.addEventListener('click', e => {
   if (btn) removeKeyword(parseInt(btn.dataset.index));
 });
 clearBtn.addEventListener('click', () => { if (!keywords.length) return; keywords = []; save(); renderTags(); });
-enableToggle.addEventListener('change', () => { enabled = enableToggle.checked; save(); });
+enableToggle.addEventListener('change', () => {
+  if (isLocked()) { enableToggle.checked = true; return; } // strict mode: can't disable
+  enabled = enableToggle.checked;
+  save();
+});
 
 document.querySelectorAll('.preset-btn').forEach(btn => {
   btn.addEventListener('mouseenter', () => {
@@ -218,6 +322,36 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
 });
 
 // ── Stats ──
+function formatDuration(totalSeconds) {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.round((totalSeconds % 3600) / 60);
+  if (h >= 1) return `${h}h ${m}m`;
+  if (m >= 1) return `${m} min`;
+  return `${totalSeconds}s`;
+}
+
+// Build the last-7-days bar chart from stats.history (date -> count).
+function renderWeekChart(history) {
+  const chart = document.getElementById('weekChart');
+  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const days = [];
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    days.push({ label: dayLabels[d.getDay()], count: history[key] || 0 });
+  }
+  const max = Math.max(1, ...days.map(d => d.count));
+  chart.innerHTML = days.map(d => {
+    const pct = Math.round((d.count / max) * 100);
+    return `<div class="week-col" title="${d.count} blocked">
+      <div class="week-bar ${d.count ? '' : 'empty'}" style="height:${d.count ? Math.max(pct, 6) : 4}%"></div>
+      <div class="week-day">${d.label}</div>
+    </div>`;
+  }).join('');
+}
+
 function getWellness(total) {
   if (total === 0)  return { emoji: '🧘', msg: 'Your feed, your rules.', sub: 'Add filters and start reclaiming your attention.' };
   if (total < 10)   return { emoji: '🌱', msg: 'Getting started.', sub: 'A cleaner internet is taking shape. Keep going.' };
@@ -229,11 +363,18 @@ function getWellness(total) {
 
 function loadStats() {
   chrome.storage.local.get(['stats'], result => {
-    const s = result.stats || { total: 0, today: 0, streak: 0, byKeyword: {} };
+    const s = result.stats || { total: 0, today: 0, streak: 0, byKeyword: {}, history: {} };
     document.getElementById('statTotal').textContent  = (s.total  || 0).toLocaleString();
     document.getElementById('statToday').textContent  = (s.today  || 0).toLocaleString();
     document.getElementById('statStreak').textContent = (s.streak || 0);
     document.getElementById('statTopics').textContent = keywords.length;
+
+    // Attention reclaimed (est.)
+    const secs = (s.total || 0) * SECONDS_PER_BLOCK;
+    document.getElementById('reclaimValue').textContent = formatDuration(secs);
+
+    // 7-day chart
+    renderWeekChart(s.history || {});
 
     // Top topics bar chart
     const byKw = s.byKeyword || {};
@@ -263,18 +404,21 @@ function loadStats() {
 }
 
 resetStatsBtn.addEventListener('click', () => {
+  if (isLocked()) return; // can't wipe stats mid strict window
   if (!confirm('Reset all stats?')) return;
-  chrome.storage.local.set({ stats: { total:0, today:0, streak:0, date:'', byKeyword:{}, lastActiveDate:null } }, loadStats);
+  chrome.storage.local.set({ stats: { total:0, today:0, streak:0, date:'', byKeyword:{}, history:{}, lastActiveDate:null } }, loadStats);
 });
 
 // ── Init ──
-chrome.storage.sync.get(['blockedKeywords','filterEnabled','blockedChannels','ytSettings'], result => {
+chrome.storage.sync.get(['blockedKeywords','filterEnabled','blockedChannels','ytSettings','schedule'], result => {
   keywords   = result.blockedKeywords || [];
   enabled    = result.filterEnabled !== false;
   channels   = result.blockedChannels || [];
   ytSettings = result.ytSettings || {};
+  schedule   = result.schedule || {};
   enableToggle.checked = enabled;
   renderTags();
   renderYtToggles();
   renderChannels();
+  renderSchedule();
 });

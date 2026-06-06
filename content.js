@@ -76,6 +76,7 @@ let blockedKeywords = [];
 let compiledMatchers = []; // [{ regex, keyword }] — regex per alias, mapped back to the user keyword
 let blockedChannels = [];  // YouTube channel names/handles to hide from feeds
 let ytSettings = {};       // { shorts, comments, likes, recommended, endscreen, homefeed, livechat }
+let schedule = {};         // { enabled, days:[0-6], start, end, strict } — Focus Mode window
 let enabled = true;
 
 // ── YouTube selective element hiding ──
@@ -125,6 +126,38 @@ function isYouTube() {
   return window.location.hostname.includes('youtube.com');
 }
 
+// ── Focus Mode (scheduled filtering) ──
+// schedule = { enabled, days:[0..6], start:"HH:MM", end:"HH:MM", strict }
+// When schedule.enabled, filtering is only ON inside the window. Overnight
+// windows (end <= start, e.g. 22:00–06:00) are supported.
+function withinSchedule(now) {
+  if (!schedule || !schedule.enabled) return true; // no schedule => always allowed
+  const days = Array.isArray(schedule.days) ? schedule.days : [];
+  if (!days.length) return true;
+  const toMin = hhmm => {
+    const [h, m] = String(hhmm || '').split(':').map(Number);
+    return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
+  };
+  const start = toMin(schedule.start || '09:00');
+  const end = toMin(schedule.end || '17:00');
+  const day = now.getDay();
+  const cur = now.getHours() * 60 + now.getMinutes();
+  if (start === end) return false;            // zero-length window => never
+  if (start < end) {                          // same-day window
+    return days.includes(day) && cur >= start && cur < end;
+  }
+  // Overnight window: active late today (>=start) OR early "tomorrow" (<end),
+  // where the early-morning part belongs to the *previous* scheduled day.
+  if (cur >= start) return days.includes(day);
+  if (cur < end) return days.includes((day + 6) % 7);
+  return false;
+}
+
+// The single source of truth: is filtering active right now?
+function isActive() {
+  return enabled && withinSchedule(new Date());
+}
+
 function injectYtStyle() {
   if (!isYouTube() || document.getElementById(YT_STYLE_ID)) return;
   const style = document.createElement('style');
@@ -137,9 +170,10 @@ function applyYtSettings() {
   if (!isYouTube()) return;
   injectYtStyle();
   const root = document.documentElement;
+  const on = isActive();
   YT_KEYS.forEach(key => {
-    // Master toggle off => stop hiding everything, even YouTube elements.
-    root.classList.toggle('sieve-yt-' + key, enabled && !!ytSettings[key]);
+    // Hide only when filtering is active (master on AND within schedule).
+    root.classList.toggle('sieve-yt-' + key, on && !!ytSettings[key]);
   });
 }
 
@@ -203,7 +237,7 @@ function recordBlock(keyword) {
   sessionBlocked++;
   const today = new Date().toISOString().split('T')[0];
   chrome.storage.local.get(['stats'], (result) => {
-    const stats = result.stats || { total: 0, today: 0, date: today, byKeyword: {}, streak: 0, lastActiveDate: null };
+    const stats = result.stats || { total: 0, today: 0, date: today, byKeyword: {}, history: {}, streak: 0, lastActiveDate: null };
     if (stats.date !== today) {
       stats.today = 0;
       stats.date = today;
@@ -219,6 +253,11 @@ function recordBlock(keyword) {
     stats.byKeyword = stats.byKeyword || {};
     const kLower = keyword.toLowerCase();
     stats.byKeyword[kLower] = (stats.byKeyword[kLower] || 0) + 1;
+    // Per-day history for the 7-day chart (capped to last 30 days).
+    stats.history = stats.history || {};
+    stats.history[today] = (stats.history[today] || 0) + 1;
+    const days = Object.keys(stats.history).sort();
+    while (days.length > 30) delete stats.history[days.shift()];
     chrome.storage.local.set({ stats });
   });
 }
@@ -256,7 +295,7 @@ function unblockAll() {
 }
 
 function filterPage() {
-  if (!enabled) return;
+  if (!isActive()) return;
 
   if (isYouTube()) {
     applyYtSettings(); // keep element-hiding classes alive across SPA navigation
@@ -297,22 +336,39 @@ function filterPage() {
 
 let filterTimer = null;
 const observer = new MutationObserver(() => {
-  if (!enabled) return;
+  if (!isActive()) return;
   // Element hiding is pure CSS; only schedule a scan if there's text/channel work.
   if (!compiledMatchers.length && !blockedChannels.length) return;
   clearTimeout(filterTimer);
   filterTimer = setTimeout(filterPage, OBSERVER_THROTTLE_MS);
 });
 
+// Re-evaluate the schedule periodically so filtering switches on/off at the
+// window boundary without needing a page reload or settings change.
+let lastActive = null;
+setInterval(() => {
+  const now = isActive();
+  if (now === lastActive) return;
+  lastActive = now;
+  applyYtSettings();
+  if (now) {
+    filterPage();
+  } else {
+    unblockAll(); // window just ended (non-strict) — reveal hidden content
+  }
+}, 30 * 1000);
+
 function init() {
   chrome.storage.sync.get(
-    ['blockedKeywords', 'filterEnabled', 'blockedChannels', 'ytSettings'],
+    ['blockedKeywords', 'filterEnabled', 'blockedChannels', 'ytSettings', 'schedule'],
     (result) => {
       blockedKeywords = result.blockedKeywords || [];
       enabled = result.filterEnabled !== false;
       blockedChannels = result.blockedChannels || [];
       ytSettings = result.ytSettings || {};
+      schedule = result.schedule || {};
       compiledMatchers = compileMatchers(blockedKeywords);
+      lastActive = isActive();
       applyYtSettings();
       filterPage();
       observer.observe(document.body, { childList: true, subtree: true });
@@ -326,7 +382,9 @@ chrome.runtime.onMessage.addListener((msg) => {
     enabled = msg.enabled !== false;
     blockedChannels = msg.channels || [];
     ytSettings = msg.yt || {};
+    if (msg.schedule !== undefined) schedule = msg.schedule || {};
     compiledMatchers = compileMatchers(blockedKeywords);
+    lastActive = isActive();
     applyYtSettings();
     unblockAll();
     filterPage();
@@ -337,7 +395,7 @@ chrome.runtime.onMessage.addListener((msg) => {
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'sync') return;
   if (!changes.blockedKeywords && !changes.filterEnabled &&
-      !changes.blockedChannels && !changes.ytSettings) return;
+      !changes.blockedChannels && !changes.ytSettings && !changes.schedule) return;
   if (changes.blockedKeywords) {
     blockedKeywords = changes.blockedKeywords.newValue || [];
     compiledMatchers = compileMatchers(blockedKeywords);
@@ -345,6 +403,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (changes.filterEnabled) enabled = changes.filterEnabled.newValue !== false;
   if (changes.blockedChannels) blockedChannels = changes.blockedChannels.newValue || [];
   if (changes.ytSettings) ytSettings = changes.ytSettings.newValue || {};
+  if (changes.schedule) schedule = changes.schedule.newValue || {};
+  lastActive = isActive();
   applyYtSettings();
   unblockAll();
   filterPage();

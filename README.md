@@ -28,8 +28,13 @@ Built for both Indian and global audiences. Clean feed. Clear mind.
   - Live chat
 - **Channel blocklist** — stop specific YouTube channels from ever appearing in
   your feed.
-- **Stats & streaks** — see how much noise you've blocked, top topics, and a
-  daily focus streak.
+- **Focus Mode (scheduled filtering)** — filter only during the hours and days
+  you choose (e.g. 9–5 on weekdays); your feed stays normal the rest of the time.
+  Overnight windows supported.
+- **Strict Mode** — lock your settings during an active focus window so you
+  can't disable the filter or edit your lists on impulse until it ends.
+- **Focus dashboard** — see estimated attention reclaimed, a 7-day activity
+  chart, top blocked topics, and a daily streak.
 - **100% on-device** — nothing you browse ever leaves your machine.
 
 ---
