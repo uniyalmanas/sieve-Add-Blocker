@@ -159,7 +159,7 @@
     .sync-or { text-align: center; font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); margin: 12px 0; }
     .sync-code-box { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
     .sync-code-box span { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; color: var(--accent); letter-spacing: .05em; }
-    .sync-warn { background: rgba(255,77,77,.08); border: 1px solid var(--danger); color: var(--danger); border-radius: 8px; padding: 10px 12px; font-family: 'DM Mono', monospace; font-size: 10px; line-height: 1.5; margin-bottom: 12px; }
+    .sync-warn { background: var(--surface2); border: 1px solid var(--border); color: var(--accent); border-radius: 8px; padding: 10px 12px; font-family: 'DM Mono', monospace; font-size: 10px; line-height: 1.5; margin-bottom: 12px; }
 
     /* ── Focus dashboard (stats) ── */
     .reclaim-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
@@ -367,7 +367,7 @@
     <div class="yt-note">Sync filters across Chrome, Edge &amp; Firefox with a secret code. Stats stay on each device.</div>
 
     <div class="sync-warn" id="syncWarn" style="display:none">
-      ⚠ Sync backend not configured. Deploy it and set <strong>SYNC_ENDPOINT</strong> — see <strong>backend/README.md</strong>.
+      ☁ Cross-browser sync is coming in a future update. For now, your filters stay safely on this device.
     </div>
 
     <div id="syncUnlinked">

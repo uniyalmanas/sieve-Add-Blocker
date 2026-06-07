@@ -45,12 +45,15 @@ This data stays in your browser. It is used only to make the extension work.
   page text against your keyword list and hide matching elements in your
   browser. No page content is recorded or sent anywhere.
 
-## Optional sync (off by default)
+## Optional sync (not active in this version)
 
-Winnow includes an **optional** cross-browser sync feature. It is **off unless
-you turn it on** by creating or entering a sync code.
+Winnow's optional cross-browser sync is **not enabled in the current release**.
+This version runs **100% on your device and transmits nothing**. The description
+below explains how sync will work *if* it is enabled in a future version — at
+which point it would be **off unless you turn it on** by creating or entering a
+sync code.
 
-If you enable sync:
+If/when you enable sync:
 
 - Only your **filter settings** (keywords, blocked channels, YouTube toggles,
   and Focus schedule) are uploaded. **Your statistics are never uploaded** —

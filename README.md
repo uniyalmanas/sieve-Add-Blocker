@@ -35,11 +35,12 @@ Built for both Indian and global audiences. Clean feed. Clear mind.
   can't disable the filter or edit your lists on impulse until it ends.
 - **Focus dashboard** — see estimated attention reclaimed, a 7-day activity
   chart, top blocked topics, and a daily streak.
-- **Cross-browser sync (optional)** — link Chrome, Edge & Firefox with an
-  anonymous sync code to keep your filter settings in step. Off by default;
-  see [backend/](backend/) to self-host the free Cloudflare Worker.
-- **On-device by default** — your browsing never leaves your machine; only your
-  *filter settings* are uploaded, and only if you opt into sync.
+- **Cross-browser sync (planned)** — link Chrome, Edge & Firefox with an
+  anonymous sync code to keep your filter settings in step. **Not active in the
+  current release**; the [backend/](backend/) Cloudflare Worker is ready for a
+  future version.
+- **100% on-device** — nothing about your browsing *or* your settings leaves
+  your machine in this release.
 
 ---
 
@@ -83,10 +84,12 @@ The master toggle in the header turns all filtering on/off instantly.
 Winnow runs in your browser and never collects or transmits your browsing
 activity. Your keyword and channel lists live in Chrome's local/synced storage.
 
-**Optional sync:** if you create or link a sync code, your *filter settings*
-(keywords, channels, YouTube toggles, schedule) — and nothing else — are stored
-on the Cloudflare Worker backend **you** deploy, under a SHA-256 hash of your
-code. Your stats stay on each device. Sync is off until you turn it on.
+**Sync (planned, not active in this release):** a future version may offer
+optional cross-browser sync. If enabled, only your *filter settings* (keywords,
+channels, YouTube toggles, schedule) — and nothing else — would be stored on a
+Cloudflare Worker backend **you** deploy, under a SHA-256 hash of your code, and
+only after you opt in. Your stats would always stay on each device. The current
+release transmits nothing.
 
 Full policy: [PRIVACY.md](PRIVACY.md) (a hostable HTML copy lives in
 [docs/privacy.html](docs/privacy.html) for GitHub Pages).

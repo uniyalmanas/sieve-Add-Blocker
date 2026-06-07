@@ -10,9 +10,12 @@ let enabled = true;
 const SECONDS_PER_BLOCK = 8;
 
 // ── Sync backend ──
-// After deploying backend/worker.js, paste your Worker URL here (no trailing slash).
-// Until then the Sync tab shows a "not configured" notice. See backend/README.md.
-const SYNC_ENDPOINT = 'https://sieve-sync.uniyalmanas.workers.dev';
+// Cross-browser sync is DISABLED for the v1 store build: the placeholder below
+// makes endpointConfigured() false, so the extension makes ZERO network calls
+// (100% on-device for the cleanest store review).
+// To re-enable in v1.1 — or to use sync privately — set this to the live URL:
+//   https://sieve-sync.uniyalmanas.workers.dev   (see backend/README.md)
+const SYNC_ENDPOINT = 'https://YOUR-WORKER-SUBDOMAIN.workers.dev';
 const endpointConfigured = () => !/YOUR-WORKER-SUBDOMAIN/.test(SYNC_ENDPOINT);
 
 let syncState = { code: null, lastModified: 0, lastSynced: 0 };
@@ -460,7 +463,7 @@ function renderSync() {
   } else if (configured) {
     setSyncStatus('Not linked. Create a code to sync across browsers.');
   } else {
-    setSyncStatus('Sync backend not configured.');
+    setSyncStatus('Coming soon — sync your filters across browsers.');
   }
 }
 
