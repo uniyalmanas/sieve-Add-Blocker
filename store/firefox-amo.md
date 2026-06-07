@@ -58,7 +58,7 @@ Link Chrome, Edge and Firefox with an anonymous sync code. Off by default; only 
 PRIVACY FIRST
 No accounts, no email, no analytics, no ads, no trackers. On-device by default.
 
-Privacy policy: [YOUR PRIVACY POLICY URL]
+Privacy policy: https://uniyalmanas.github.io/winnow/docs/privacy.html
 ```
 
 ---

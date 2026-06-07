@@ -85,7 +85,7 @@ PRIVACY FIRST
 • Your browsing history is never collected or sent anywhere.
 • On-device by default — only your filter settings sync, and only if you opt in.
 
-Read the full privacy policy: [YOUR PRIVACY POLICY URL]
+Read the full privacy policy: https://uniyalmanas.github.io/winnow/docs/privacy.html
 
 ━━━━━━━━━━━━━━━━━━━━
 WHO IT'S FOR
