@@ -73,7 +73,7 @@ The store needs a public **URL**, not a file. Free options:
 2. GitHub repo → **Settings → Pages**.
 3. Source: **Deploy from a branch** → branch `main` → folder **/docs** → Save.
 4. Wait ~1 min. Your URL:
-   `https://uniyalmanas.github.io/sieve-Add-Blocker/privacy.html`
+   `https://uniyalmanas.github.io/winnow/privacy.html`
 - [ ] Page loads at that URL.
 
 **Option 2 — a public GitHub Gist** of `PRIVACY.md` (quick, but Pages looks more legit).
