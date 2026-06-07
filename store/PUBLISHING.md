@@ -98,32 +98,53 @@ Tip: open the popup, screenshot at a clean window size, crop/pad to 1280×800.
 
 ---
 
+## Packages (pre-built, ready to upload)
+
+`winnow-chrome.zip` and `winnow-firefox.zip` are already built and sit in the
+project root (gitignored). No `zip` tool needed.
+
+| Store | Upload | Fee |
+|-------|--------|-----|
+| Chrome Web Store | `winnow-chrome.zip` | $5 one-time |
+| Microsoft Edge Add-ons | `winnow-chrome.zip` (same file) | free |
+| Firefox AMO | `winnow-firefox.zip` (has gecko id) | free |
+
+To rebuild after a code change, ask and the packages are regenerated.
+
+---
+
 ## Phase E — Chrome Web Store submission
 
 - [ ] Register developer account (one-time **US$5**) at
       https://chrome.google.com/webstore/devconsole
-- [ ] Zip the extension (exclude backend/, store/, docs/, tests):
-      ```bash
-      # from headline-filter.3/
-      zip -r winnow-chrome.zip manifest.json popup.html popup.js content.js icons/
-      ```
-- [ ] Upload zip → fill listing from `chrome-web-store.md`
-- [ ] Add screenshots + 128px icon
-- [ ] Paste privacy policy URL
-- [ ] Complete the **Privacy practices** / data-disclosure form (see notes in
-      `chrome-web-store.md`)
+- [ ] Upload **`winnow-chrome.zip`** → fill listing from `chrome-web-store.md`
+- [ ] Add the 5 screenshots from `store/screenshots/upload/` + 128px icon
+- [ ] Paste privacy policy URL: https://uniyalmanas.github.io/winnow/docs/privacy.html
+- [ ] Complete the **Privacy practices** / data-disclosure form → "does not
+      collect user data" (v1 is on-device; see `chrome-web-store.md`)
 - [ ] Fill **single purpose** + **permission justifications**
 - [ ] Submit for review (typically a few days)
 
 ---
 
+## Phase E2 — Microsoft Edge Add-ons (free, same zip)
+
+- [ ] Register (free) at Partner Center — see `edge-addons.md`
+- [ ] Upload **`winnow-chrome.zip`** (identical Chromium build)
+- [ ] Reuse the Chrome listing copy
+- [ ] Provide a **300×300 store logo** (the one asset Edge needs beyond Chrome)
+- [ ] Same screenshots, privacy URL, and data-disclosure answers
+- [ ] Submit (review up to ~7 business days)
+
+---
+
 ## Phase F — Firefox AMO submission (free)
 
-- [ ] Add `browser_specific_settings.gecko.id` to `manifest.json` (see
-      `firefox-amo.md`) — Chrome ignores it, Firefox MV3 requires it.
-- [ ] Test in Firefox via `about:debugging` → "Load Temporary Add-on".
-- [ ] Zip and submit at https://addons.mozilla.org/developers/
-- [ ] Paste the reviewer notes from `firefox-amo.md`.
+- [ ] Upload **`winnow-firefox.zip`** (gecko id already baked in) at
+      https://addons.mozilla.org/developers/
+- [ ] Before/after a test in Firefox via `about:debugging` → "Load Temporary
+      Add-on" to confirm filtering activates (host perms are opt-in on Firefox).
+- [ ] Fill listing from `firefox-amo.md`; paste the reviewer notes from it.
 
 ---
 
