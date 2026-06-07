@@ -1,6 +1,6 @@
-# Sieve Sync Backend (Cloudflare Workers + KV)
+# Winnow Sync Backend (Cloudflare Workers + KV)
 
-A tiny, free, serverless backend that lets Sieve sync filter settings across
+A tiny, free, serverless backend that lets Winnow sync filter settings across
 browsers using an anonymous **sync code**. No accounts, no emails, no PII —
 the code is the only secret, and the server stores data under a SHA-256 hash
 of it.

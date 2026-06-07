@@ -2,9 +2,6 @@ name = "sieve-sync"
 main = "worker.js"
 compatibility_date = "2026-01-01"
 
-# 1. Create the KV namespace once:
-#      wrangler kv namespace create SIEVE_SYNC
-#    It prints an `id = "..."` — paste it below.
 [[kv_namespaces]]
 binding = "SIEVE_SYNC"
-id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
+id = "041db5278d16464b9d3b94f20d82221b"

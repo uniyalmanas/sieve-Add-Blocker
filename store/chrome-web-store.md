@@ -7,7 +7,7 @@ labelled to match the dashboard. Character limits noted where they apply.
 
 ## Item name (max 75 chars)
 ```
-Sieve — Block Distracting News, Topics & YouTube Clutter
+Winnow — Block Distracting News, Topics & YouTube Clutter
 ```
 
 ## Summary (max 132 chars)
@@ -26,9 +26,9 @@ Hide Cricket, Bollywood, NFL, crypto hype & any topic you choose — across news
 ## Detailed description (max 16,000 chars)
 
 ```
-Sieve quietly removes the topics you're tired of seeing — so your feed stops hijacking your attention.
+Winnow quietly removes the topics you're tired of seeing — so your feed stops hijacking your attention.
 
-Tell Sieve what you don't want to see (Cricket, Bollywood, IPL, NFL, NBA, the Kardashians, crypto hype, politics, a specific celebrity — whatever drains you), and it hides those headlines, video cards, and posts as you browse. It works across news sites and YouTube, in both English and Hindi.
+Tell Winnow what you don't want to see (Cricket, Bollywood, IPL, NFL, NBA, the Kardashians, crypto hype, politics, a specific celebrity — whatever drains you), and it hides those headlines, video cards, and posts as you browse. It works across news sites and YouTube, in both English and Hindi.
 
 No feeds to rebuild. No accounts required. Nothing about your browsing leaves your device.
 
@@ -36,13 +36,13 @@ No feeds to rebuild. No accounts required. Nothing about your browsing leaves yo
 WHAT YOU CAN BLOCK
 ━━━━━━━━━━━━━━━━━━━━
 
-• TOPICS WITH SMART ALIASES — Block "Cricket" and Sieve also catches IPL, Virat Kohli, RCB, CSK, T20, BCCI and more. You don't have to list every variation yourself.
+• TOPICS WITH SMART ALIASES — Block "Cricket" and Winnow also catches IPL, Virat Kohli, RCB, CSK, T20, BCCI and more. You don't have to list every variation yourself.
 
 • ONE-TAP REGION PACKS — Quick-start topic packs for 🇮🇳 India and 🌍 Western feeds.
 
 • HINDI / DEVANAGARI — Matches Hindi headlines (क्रिकेट, बॉलीवुड, मोदी) that most blockers miss entirely.
 
-• PRECISE WORD MATCHING — "Cricket" won't accidentally hide "Xiaomi" or "DC Comics". Sieve matches whole words, not fragments.
+• PRECISE WORD MATCHING — "Cricket" won't accidentally hide "Xiaomi" or "DC Comics". Winnow matches whole words, not fragments.
 
 ━━━━━━━━━━━━━━━━━━━━
 YOUTUBE CONTROL PANEL
@@ -93,14 +93,14 @@ WHO IT'S FOR
 
 Anyone whose feed has turned into noise — students avoiding match-score spoilers, professionals trying to focus during work hours, or anyone who just wants the internet to stop shouting about a topic they don't care about.
 
-Install Sieve, tell it what to hide, and get a quieter feed.
+Install Winnow, tell it what to hide, and get a quieter feed.
 ```
 
 ---
 
 ## Single purpose (required justification field)
 ```
-Sieve has one purpose: to hide user-selected distracting content (topics, keywords, and specific YouTube elements) from web pages and YouTube, so the user sees a less distracting feed.
+Winnow has one purpose: to hide user-selected distracting content (topics, keywords, and specific YouTube elements) from web pages and YouTube, so the user sees a less distracting feed.
 ```
 
 ## Permission justifications (required, per permission)
@@ -117,7 +117,7 @@ Used to apply the user's filtering rules to the page they are currently viewing.
 
 **Host permission `<all_urls>`**
 ```
-Sieve lets users filter distracting content on any news site or web page they choose to visit, so it must be able to run its content script on pages in order to scan visible text against the user's own keyword list and hide matching elements. Page content is only read in-memory for matching; it is never stored or transmitted.
+Winnow lets users filter distracting content on any news site or web page they choose to visit, so it must be able to run its content script on pages in order to scan visible text against the user's own keyword list and hide matching elements. Page content is only read in-memory for matching; it is never stored or transmitted.
 ```
 
 ## Data usage disclosures (Privacy practices tab)

@@ -7,7 +7,7 @@ differences below before you submit.
 
 ## Name
 ```
-Sieve — Block Distracting News, Topics & YouTube Clutter
+Winnow — Block Distracting News, Topics & YouTube Clutter
 ```
 
 ## Summary (max 250 chars)
@@ -31,9 +31,9 @@ productivity, focus, content-filter, youtube, news, distraction, hindi, ad-free-
 ## Description
 
 ```
-Sieve quietly removes the topics you're tired of seeing, so your feed stops hijacking your attention.
+Winnow quietly removes the topics you're tired of seeing, so your feed stops hijacking your attention.
 
-Tell Sieve what you don't want to see — Cricket, Bollywood, IPL, NFL, the Kardashians, crypto hype, politics, a specific name — and it hides those headlines, video cards, and posts as you browse, across news sites and YouTube, in English and Hindi.
+Tell Winnow what you don't want to see — Cricket, Bollywood, IPL, NFL, the Kardashians, crypto hype, politics, a specific name — and it hides those headlines, video cards, and posts as you browse, across news sites and YouTube, in English and Hindi.
 
 No accounts. No tracking. Nothing about your browsing leaves your device.
 
@@ -81,26 +81,26 @@ AMO has a notes-to-reviewer field. Paste:
 
 ## MV3 / Firefox gotchas to check before submitting
 - Firefox MV3 uses `browser.*` APIs but supports the `chrome.*` namespace as an
-  alias for most of what Sieve uses (`storage`, `runtime`, `tabs`). Sieve uses
+  alias for most of what Winnow uses (`storage`, `runtime`, `tabs`). Winnow uses
   callback-style `chrome.storage` calls — these work in Firefox. **Test in
   Firefox before submitting** (load via `about:debugging`).
 - Firefox requires an **add-on ID** for MV3. Add this to `manifest.json` before
   packaging for Firefox (Chrome ignores it):
   ```json
   "browser_specific_settings": {
-    "gecko": { "id": "sieve@uniyalmanas", "strict_min_version": "121.0" }
+    "gecko": { "id": "winnow@uniyalmanas", "strict_min_version": "121.0" }
   }
   ```
 - `host_permissions: ["<all_urls>"]` on Firefox MV3 are **opt-in** — Firefox
   shows them as optional and the user grants them from the add-on's permissions
   screen. Confirm filtering still activates after granting.
-- AMO does **source-code review** and rejects obfuscated code. Sieve's source is
+- AMO does **source-code review** and rejects obfuscated code. Winnow's source is
   plain JS, so you're fine — just don't minify.
 
 ## Packaging
 ```bash
 # From the extension root (the folder with manifest.json), zip the needed files:
-zip -r sieve-firefox.zip manifest.json popup.html popup.js content.js icons/
+zip -r winnow-firefox.zip manifest.json popup.html popup.js content.js icons/
 ```
 Upload the zip at https://addons.mozilla.org/developers/ → "Submit a New Add-on".
 AMO is free (no registration fee, unlike Chrome).

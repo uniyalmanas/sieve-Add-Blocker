@@ -1,4 +1,4 @@
-// Sieve - Popup Script v3
+// Winnow - Popup Script v3
 
 let keywords = [];
 let channels = [];
@@ -12,7 +12,7 @@ const SECONDS_PER_BLOCK = 8;
 // ── Sync backend ──
 // After deploying backend/worker.js, paste your Worker URL here (no trailing slash).
 // Until then the Sync tab shows a "not configured" notice. See backend/README.md.
-const SYNC_ENDPOINT = 'https://YOUR-WORKER-SUBDOMAIN.workers.dev';
+const SYNC_ENDPOINT = 'https://sieve-sync.uniyalmanas.workers.dev';
 const endpointConfigured = () => !/YOUR-WORKER-SUBDOMAIN/.test(SYNC_ENDPOINT);
 
 let syncState = { code: null, lastModified: 0, lastSynced: 0 };

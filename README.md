@@ -1,6 +1,6 @@
-# Sieve — Block Distracting News & Content
+# Winnow — Block Distracting News & Content
 
-Filter out the noise while you scroll. Sieve hides headlines, video cards, and
+Filter out the noise while you scroll. Winnow hides headlines, video cards, and
 whole topics you never want to see — **Cricket, Bollywood, IPL, NFL, NBA,
 Kardashians, crypto hype, and more** — across news sites and YouTube, in
 **English and Hindi**.
@@ -49,7 +49,7 @@ Built for both Indian and global audiences. Clean feed. Clear mind.
 2. Open `chrome://extensions` in Chrome (or any Chromium browser).
 3. Turn on **Developer mode** (top-right).
 4. Click **Load unpacked** and select this folder.
-5. Pin **Sieve** and open the popup to configure your filters.
+5. Pin **Winnow** and open the popup to configure your filters.
 
 ---
 
@@ -80,7 +80,7 @@ The master toggle in the header turns all filtering on/off instantly.
 
 ## Privacy
 
-Sieve runs in your browser and never collects or transmits your browsing
+Winnow runs in your browser and never collects or transmits your browsing
 activity. Your keyword and channel lists live in Chrome's local/synced storage.
 
 **Optional sync:** if you create or link a sync code, your *filter settings*

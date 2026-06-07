@@ -8,3 +8,10 @@ _*.js
 
 # Stray artifact dirs
 {icons}/
+
+# Wrangler / Cloudflare local cache & state (contains account id, geo, local KV)
+.wrangler/
+backend/.wrangler/
+
+# Node
+node_modules/

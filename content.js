@@ -1,4 +1,4 @@
-// Sieve - Content Script v3
+// Winnow - Content Script v3
 // Blocks headlines, thumbnails, cards, channels by keyword + aliases
 // Tracks block stats and reports them to storage
 

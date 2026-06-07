@@ -1,21 +1,21 @@
-# Privacy Policy — Sieve
+# Privacy Policy — Winnow
 
 **Last updated:** 7 June 2026
 
-Sieve ("the extension") is a browser extension that filters distracting content
+Winnow ("the extension") is a browser extension that filters distracting content
 (news headlines, topics, and YouTube elements) from the pages you visit. This
-policy explains exactly what data Sieve handles and what it does not.
+policy explains exactly what data Winnow handles and what it does not.
 
-**Short version:** Sieve does not collect, sell, or transmit your browsing
+**Short version:** Winnow does not collect, sell, or transmit your browsing
 activity. Everything runs on your device. The only data that ever leaves your
 machine is your *filter settings* — and only if **you** choose to turn on the
 optional sync feature.
 
 ---
 
-## What Sieve stores on your device
+## What Winnow stores on your device
 
-Sieve saves the following in your browser's local extension storage
+Winnow saves the following in your browser's local extension storage
 (`chrome.storage`):
 
 - The keywords and topics you choose to block
@@ -26,7 +26,7 @@ Sieve saves the following in your browser's local extension storage
 
 This data stays in your browser. It is used only to make the extension work.
 
-## What Sieve does NOT do
+## What Winnow does NOT do
 
 - It does **not** collect your browsing history.
 - It does **not** track the pages you visit or send them anywhere.
@@ -40,14 +40,14 @@ This data stays in your browser. It is used only to make the extension work.
 
 - **`storage`** — to save your filter settings and stats on your device.
 - **`activeTab`** — to apply filtering to the page you're viewing.
-- **Host access (`<all_urls>`)** — Sieve filters content on whatever sites you
+- **Host access (`<all_urls>`)** — Winnow filters content on whatever sites you
   visit, so it needs permission to run on pages. It uses this **only** to scan
   page text against your keyword list and hide matching elements in your
   browser. No page content is recorded or sent anywhere.
 
 ## Optional sync (off by default)
 
-Sieve includes an **optional** cross-browser sync feature. It is **off unless
+Winnow includes an **optional** cross-browser sync feature. It is **off unless
 you turn it on** by creating or entering a sync code.
 
 If you enable sync:
@@ -57,7 +57,7 @@ If you enable sync:
   they stay on each device.
 - Your browsing activity is **never** part of sync.
 - Data is stored on a **Cloudflare Worker backend that you (or whoever
-  distributes your copy) deploy and control** — there is no central Sieve
+  distributes your copy) deploy and control** — there is no central Winnow
   server operated by the developer.
 - Your sync code is **never stored in plain text** on the server; settings are
   stored under a SHA-256 hash of the code. Treat your code like a password:
@@ -74,7 +74,7 @@ If you enable sync:
 
 ## Children's privacy
 
-Sieve is a general-purpose productivity tool and is not directed at children
+Winnow is a general-purpose productivity tool and is not directed at children
 under 13. It collects no personal information.
 
 ## Changes to this policy

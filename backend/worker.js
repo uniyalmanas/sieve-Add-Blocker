@@ -1,4 +1,4 @@
-// Sieve Sync — Cloudflare Worker + KV
+// Winnow Sync — Cloudflare Worker + KV
 // ------------------------------------------------------------------
 // Anonymous, code-based settings sync. The "sync code" is the only secret:
 // whoever holds it can read/write that settings blob. We never store the raw

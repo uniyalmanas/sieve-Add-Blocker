@@ -1,4 +1,4 @@
-# Sieve — Publishing & Deploy Runbook
+# Winnow — Publishing & Deploy Runbook
 
 Everything from "code is done" to "live in the stores", in order. Tick the boxes
 as you go.
@@ -54,7 +54,7 @@ curl https://sieve-sync.<subdomain>.workers.dev/
 // In popup.js, near the top:
 const SYNC_ENDPOINT = 'https://sieve-sync.<subdomain>.workers.dev';
 ```
-Then reload the extension at `chrome://extensions` (click ↻ on Sieve's card).
+Then reload the extension at `chrome://extensions` (click ↻ on Winnow's card).
 
 **Test cross-browser (NOT on a phone — mobile Chrome has no extensions):**
 - [ ] Chrome: add 2–3 keywords → Sync tab → **Create code** → copy it.
@@ -105,7 +105,7 @@ Tip: open the popup, screenshot at a clean window size, crop/pad to 1280×800.
 - [ ] Zip the extension (exclude backend/, store/, docs/, tests):
       ```bash
       # from headline-filter.3/
-      zip -r sieve-chrome.zip manifest.json popup.html popup.js content.js icons/
+      zip -r winnow-chrome.zip manifest.json popup.html popup.js content.js icons/
       ```
 - [ ] Upload zip → fill listing from `chrome-web-store.md`
 - [ ] Add screenshots + 128px icon

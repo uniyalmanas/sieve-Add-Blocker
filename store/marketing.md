@@ -38,7 +38,7 @@ and celebrity drama I genuinely don't care about. Existing blockers either
 nuked entire sites or couldn't catch all the variations (block "Cricket" but
 miss "IPL", "Kohli", "RCB"...).
 
-So I made Sieve. You type a topic, it hides matching headlines/video cards as
+So I made Winnow. You type a topic, it hides matching headlines/video cards as
 you scroll — and it understands aliases, so "Cricket" also catches IPL, Kohli,
 T20, etc. It also does Hindi headlines, has a YouTube panel (hide Shorts /
 comments / recommended individually), and a scheduled "Focus Mode".
@@ -58,7 +58,7 @@ Short, concrete, one clear hook. Thread optional. Add a screenshot or a
 
 **Single post:**
 ```
-I got tired of news feeds shouting about topics I don't care about, so I built Sieve 🧹
+I got tired of news feeds shouting about topics I don't care about, so I built Winnow 🧹
 
 Type a topic → it hides matching headlines & YouTube cards as you scroll.
 Block "Cricket" and it also catches IPL, Kohli, RCB, T20.
@@ -72,7 +72,7 @@ Hindi support, YouTube controls, scheduled Focus Mode. Free, on-device.
 ```
 1/ I built a free browser extension that hides the topics you're sick of seeing.
 
-News feeds and YouTube are engineered to grab attention. Sieve quietly takes it back. 🧵
+News feeds and YouTube are engineered to grab attention. Winnow quietly takes it back. 🧵
 
 2/ You tell it what to hide — Cricket, celeb gossip, crypto hype, politics, a specific name.
 
@@ -108,7 +108,7 @@ Hide topics you're tired of — across news sites & YouTube
 
 **Description:**
 ```
-Sieve hides the headlines, video cards, and topics you never want to see —
+Winnow hides the headlines, video cards, and topics you never want to see —
 Cricket, Bollywood, NFL, crypto hype, a specific name, whatever drains you —
 across news sites and YouTube, in English and Hindi.
 
@@ -121,11 +121,11 @@ No account, no tracking, on-device by default. Free.
 
 **Maker's first comment:**
 ```
-Hey PH 👋 I made Sieve because I'd open a news site "for two minutes" and lose
+Hey PH 👋 I made Winnow because I'd open a news site "for two minutes" and lose
 twenty to match scores and celebrity drama I don't care about. Existing blockers
 either nuked whole sites or missed half the variations of a topic.
 
-Sieve hides just the topics you pick — and understands aliases, so you don't
+Winnow hides just the topics you pick — and understands aliases, so you don't
 have to list every spelling. It also handles Hindi, gives you granular YouTube
 controls, and a scheduled Focus Mode for work hours.
 
@@ -144,7 +144,7 @@ What's the one topic you'd block first? Mine was cricket scores during the IPL �
 
 Only if you're ready for blunt feedback. Title format is strict:
 ```
-Show HN: Sieve – hide topics you're tired of seeing across news sites and YouTube
+Show HN: Winnow – hide topics you're tired of seeing across news sites and YouTube
 ```
 First comment: explain *why you built it*, the technical approach (word-boundary
 matching, Devanagari support, CSS-based YouTube hiding, on-device), and what

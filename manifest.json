@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Sieve – Block Distracting News & Content",
-  "short_name": "Sieve",
+  "name": "Winnow – Block Distracting News & Content",
+  "short_name": "Winnow",
   "version": "3.0.0",
   "description": "Filter out Cricket, Bollywood, NFL, Kardashians, and any topic you never want to see. Clean feed. Clear mind.",
   "permissions": ["storage", "activeTab"],
