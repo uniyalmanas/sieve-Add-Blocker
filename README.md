@@ -35,7 +35,11 @@ Built for both Indian and global audiences. Clean feed. Clear mind.
   can't disable the filter or edit your lists on impulse until it ends.
 - **Focus dashboard** — see estimated attention reclaimed, a 7-day activity
   chart, top blocked topics, and a daily streak.
-- **100% on-device** — nothing you browse ever leaves your machine.
+- **Cross-browser sync (optional)** — link Chrome, Edge & Firefox with an
+  anonymous sync code to keep your filter settings in step. Off by default;
+  see [backend/](backend/) to self-host the free Cloudflare Worker.
+- **On-device by default** — your browsing never leaves your machine; only your
+  *filter settings* are uploaded, and only if you opt into sync.
 
 ---
 
@@ -54,7 +58,10 @@ Built for both Indian and global audiences. Clean feed. Clear mind.
 - **Filter tab** — pick region presets or add custom keywords.
 - **YouTube tab** — flip on only the elements you want hidden, and block channels
   by name or `@handle`.
-- **Stats tab** — track blocked counts, top topics, and your streak.
+- **Focus tab** — set a schedule (days + hours) and optional Strict Mode.
+- **Sync tab** — create a code to sync settings across browsers (requires the
+  backend; see [backend/README.md](backend/README.md)).
+- **Stats tab** — track blocked counts, top topics, time reclaimed, and streak.
 
 The master toggle in the header turns all filtering on/off instantly.
 
@@ -73,9 +80,13 @@ The master toggle in the header turns all filtering on/off instantly.
 
 ## Privacy
 
-Sieve runs entirely in your browser. It does not collect, transmit, or store any
-browsing data on external servers. Your keyword and channel lists live in
-Chrome's local/synced storage only.
+Sieve runs in your browser and never collects or transmits your browsing
+activity. Your keyword and channel lists live in Chrome's local/synced storage.
+
+**Optional sync:** if you create or link a sync code, your *filter settings*
+(keywords, channels, YouTube toggles, schedule) — and nothing else — are stored
+on the Cloudflare Worker backend **you** deploy, under a SHA-256 hash of your
+code. Your stats stay on each device. Sync is off until you turn it on.
 
 ---
 

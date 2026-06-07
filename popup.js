@@ -9,6 +9,16 @@ let enabled = true;
 // Rough estimate: each blocked item ~= 8 seconds of attention not lost.
 const SECONDS_PER_BLOCK = 8;
 
+// ── Sync backend ──
+// After deploying backend/worker.js, paste your Worker URL here (no trailing slash).
+// Until then the Sync tab shows a "not configured" notice. See backend/README.md.
+const SYNC_ENDPOINT = 'https://YOUR-WORKER-SUBDOMAIN.workers.dev';
+const endpointConfigured = () => !/YOUR-WORKER-SUBDOMAIN/.test(SYNC_ENDPOINT);
+
+let syncState = { code: null, lastModified: 0, lastSynced: 0 };
+let applyingRemote = false; // guard: don't re-push while applying a pulled blob
+let pushTimer = null;
+
 // YouTube selective-hide toggles (order = display order)
 const YT_OPTIONS = [
   { key: 'shorts',      label: 'Shorts',          desc: 'Hide Shorts shelves, sidebar & reels' },
@@ -68,6 +78,17 @@ const schedStrict    = document.getElementById('schedStrict');
 const schedHint      = document.getElementById('schedHint');
 const focusStatus    = document.getElementById('focusStatus');
 const dayRow         = document.getElementById('dayRow');
+const syncWarn       = document.getElementById('syncWarn');
+const syncUnlinked   = document.getElementById('syncUnlinked');
+const syncLinked     = document.getElementById('syncLinked');
+const syncCodeText   = document.getElementById('syncCodeText');
+const syncCodeInput  = document.getElementById('syncCodeInput');
+const syncCreateBtn  = document.getElementById('syncCreateBtn');
+const syncLinkBtn    = document.getElementById('syncLinkBtn');
+const syncCopyBtn    = document.getElementById('syncCopyBtn');
+const syncNowBtn     = document.getElementById('syncNowBtn');
+const syncUnlinkBtn  = document.getElementById('syncUnlinkBtn');
+const syncStatus     = document.getElementById('syncStatus');
 
 // ── Tab switching ──
 document.querySelectorAll('.tab').forEach(tab => {
@@ -78,6 +99,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'stats') loadStats();
     if (tab.dataset.tab === 'focus') renderSchedule();
+    if (tab.dataset.tab === 'sync') renderSync();
   });
 });
 
@@ -102,6 +124,11 @@ function save() {
     ytSettings,
     schedule,
   }, notifyTab);
+  if (!applyingRemote) {
+    syncState.lastModified = Date.now();
+    persistSyncState();
+    schedulePush();
+  }
 }
 
 function notifyTab() {
@@ -294,6 +321,164 @@ dayRow.addEventListener('click', e => {
   save(); renderSchedule();
 });
 
+// ── Cross-browser sync ──
+function persistSyncState() {
+  chrome.storage.local.set({ syncState });
+}
+
+function currentSettings() {
+  return {
+    blockedKeywords: keywords,
+    filterEnabled: enabled,
+    blockedChannels: channels,
+    ytSettings,
+    schedule,
+  };
+}
+
+// Apply a settings blob pulled from the server (without re-triggering a push).
+function applySettings(data) {
+  if (!data) return;
+  applyingRemote = true;
+  keywords   = Array.isArray(data.blockedKeywords) ? data.blockedKeywords : [];
+  enabled    = data.filterEnabled !== false;
+  channels   = Array.isArray(data.blockedChannels) ? data.blockedChannels : [];
+  ytSettings = data.ytSettings || {};
+  schedule   = data.schedule || {};
+  save();              // persists locally + notifies tabs; no push (guarded)
+  applyingRemote = false;
+  enableToggle.checked = enabled;
+  renderTags();
+  renderYtToggles();
+  renderChannels();
+  renderSchedule();
+}
+
+// High-entropy, human-friendly code: 16 chars from an unambiguous alphabet.
+function genCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  let out = '';
+  for (let i = 0; i < 16; i++) {
+    out += alphabet[bytes[i] % alphabet.length];
+    if (i % 4 === 3 && i < 15) out += '-';
+  }
+  return out; // e.g. ABCD-EFGH-JKLM-NPQR
+}
+
+function setSyncStatus(text, cls) {
+  syncStatus.className = 'status-banner' + (cls ? ' ' + cls : '');
+  syncStatus.textContent = text;
+}
+
+function fmtAgo(ts) {
+  if (!ts) return 'never';
+  const s = Math.round((Date.now() - ts) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  return Math.floor(s / 86400) + 'd ago';
+}
+
+async function pushSync() {
+  if (!syncState.code || !endpointConfigured()) return;
+  setSyncStatus('Syncing…');
+  const res = await fetch(SYNC_ENDPOINT + '/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: syncState.code, data: currentSettings(), updatedAt: syncState.lastModified }),
+  });
+  if (!res.ok) throw new Error('push ' + res.status);
+  syncState.lastSynced = Date.now();
+  persistSyncState();
+  renderSync();
+}
+
+async function pullSync() {
+  if (!syncState.code || !endpointConfigured()) return { found: false };
+  const res = await fetch(SYNC_ENDPOINT + '/sync?code=' + encodeURIComponent(syncState.code));
+  if (res.status === 404) return { found: false };
+  if (!res.ok) throw new Error('pull ' + res.status);
+  const j = await res.json();
+  if (j.found && (j.updatedAt || 0) > (syncState.lastModified || 0)) {
+    applySettings(j.data);
+    syncState.lastModified = j.updatedAt;
+  }
+  syncState.lastSynced = Date.now();
+  persistSyncState();
+  renderSync();
+  return j;
+}
+
+function schedulePush() {
+  if (!syncState.code || !endpointConfigured()) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => { pushSync().catch(() => setSyncStatus('Sync failed — will retry on next change.', '')); }, 1500);
+}
+
+async function createSyncCode() {
+  syncState.code = genCode();
+  syncState.lastModified = Date.now();
+  persistSyncState();
+  renderSync();
+  try { await pushSync(); setSyncStatus('Linked · backed up ' + fmtAgo(syncState.lastSynced), 'on'); }
+  catch { setSyncStatus('Created, but upload failed. Check your endpoint.', ''); }
+}
+
+async function linkSyncCode(raw) {
+  const code = (raw || '').trim().toUpperCase();
+  if (!/^[A-Z0-9-]{16,64}$/.test(code)) { setSyncStatus('Invalid code format.', ''); return; }
+  syncState.code = code;
+  syncState.lastModified = 0; // force remote to win if it exists
+  persistSyncState();
+  renderSync();
+  try {
+    const r = await pullSync();
+    if (r.found === false) { await pushSync(); setSyncStatus('Linked · this device seeded the code.', 'on'); }
+    else setSyncStatus('Linked · pulled settings ' + fmtAgo(syncState.lastSynced), 'on');
+  } catch { setSyncStatus('Link failed — check the code / endpoint.', ''); }
+}
+
+function unlinkSync() {
+  syncState = { code: null, lastModified: syncState.lastModified, lastSynced: 0 };
+  persistSyncState();
+  renderSync();
+}
+
+function renderSync() {
+  const configured = endpointConfigured();
+  syncWarn.style.display = configured ? 'none' : 'block';
+  const linked = !!syncState.code;
+  syncUnlinked.style.display = linked ? 'none' : 'block';
+  syncLinked.style.display = linked ? 'block' : 'none';
+  [syncCreateBtn, syncLinkBtn, syncNowBtn, syncCodeInput].forEach(el => { if (el) el.disabled = !configured; });
+  if (linked) {
+    syncCodeText.textContent = syncState.code;
+    if (syncStatus.textContent === 'Not linked.' || !syncStatus.textContent) {
+      setSyncStatus('Linked · last synced ' + fmtAgo(syncState.lastSynced), 'on');
+    }
+  } else if (configured) {
+    setSyncStatus('Not linked. Create a code to sync across browsers.');
+  } else {
+    setSyncStatus('Sync backend not configured.');
+  }
+}
+
+syncCreateBtn.addEventListener('click', () => createSyncCode().catch(() => {}));
+syncLinkBtn.addEventListener('click', () => { linkSyncCode(syncCodeInput.value); syncCodeInput.value = ''; });
+syncCodeInput.addEventListener('keydown', e => { if (e.key === 'Enter') { linkSyncCode(syncCodeInput.value); syncCodeInput.value = ''; } });
+syncNowBtn.addEventListener('click', async () => {
+  try { await pullSync(); await pushSync(); setSyncStatus('Synced ' + fmtAgo(Date.now()), 'on'); }
+  catch { setSyncStatus('Sync failed — check connection / endpoint.', ''); }
+});
+syncCopyBtn.addEventListener('click', () => {
+  navigator.clipboard.writeText(syncState.code || '').then(() => {
+    syncCopyBtn.textContent = 'Copied!';
+    setTimeout(() => { syncCopyBtn.textContent = 'Copy'; }, 1200);
+  }).catch(() => {});
+});
+syncUnlinkBtn.addEventListener('click', () => { if (confirm('Unlink this device? Settings stay, but stop syncing.')) unlinkSync(); });
+
 // ── Events ──
 addBtn.addEventListener('click', () => { addKeyword(kwInput.value); kwInput.value = ''; kwInput.focus(); });
 kwInput.addEventListener('keydown', e => { if (e.key === 'Enter') { addKeyword(kwInput.value); kwInput.value = ''; } });
@@ -421,4 +606,13 @@ chrome.storage.sync.get(['blockedKeywords','filterEnabled','blockedChannels','yt
   renderYtToggles();
   renderChannels();
   renderSchedule();
+
+  // Load sync link state, then pull latest from the backend (if linked).
+  chrome.storage.local.get(['syncState'], r => {
+    if (r.syncState) syncState = r.syncState;
+    renderSync();
+    if (syncState.code && endpointConfigured()) {
+      pullSync().catch(() => setSyncStatus('Could not reach sync backend.', ''));
+    }
+  });
 });

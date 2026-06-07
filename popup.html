@@ -65,9 +65,9 @@
       border-bottom: 1px solid var(--border);
     }
     .tab {
-      flex: 1; padding: 10px; text-align: center;
-      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
-      text-transform: uppercase; cursor: pointer;
+      flex: 1; padding: 10px 4px; text-align: center;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+      text-transform: uppercase; cursor: pointer; white-space: nowrap;
       color: var(--muted); border-bottom: 2px solid transparent;
       transition: all .15s; background: none; border-top: none; border-left: none; border-right: none;
     }
@@ -152,6 +152,15 @@
     .status-banner.on  { border-color: var(--accent); color: var(--accent); }
     .status-banner.locked { border-color: var(--purple); color: var(--purple); }
 
+    /* ── Sync panel ── */
+    .sync-primary { flex: 1; width: 100%; background: var(--accent); border: none; color: var(--bg); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; padding: 10px; border-radius: 6px; cursor: pointer; transition: background .15s; }
+    .sync-primary:hover { background: var(--accent-dim); }
+    .sync-primary:disabled { opacity: .4; cursor: not-allowed; }
+    .sync-or { text-align: center; font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); margin: 12px 0; }
+    .sync-code-box { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+    .sync-code-box span { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; color: var(--accent); letter-spacing: .05em; }
+    .sync-warn { background: rgba(255,77,77,.08); border: 1px solid var(--danger); color: var(--danger); border-radius: 8px; padding: 10px 12px; font-family: 'DM Mono', monospace; font-size: 10px; line-height: 1.5; margin-bottom: 12px; }
+
     /* ── Focus dashboard (stats) ── */
     .reclaim-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
     .reclaim-emoji { font-size: 26px; }
@@ -223,8 +232,9 @@
 
 <div class="tabs">
   <button class="tab active" data-tab="filter">⚙ Filter</button>
-  <button class="tab" data-tab="youtube">▶ YouTube</button>
+  <button class="tab" data-tab="youtube">▶ YT</button>
   <button class="tab" data-tab="focus">⏱ Focus</button>
+  <button class="tab" data-tab="sync">☁ Sync</button>
   <button class="tab" data-tab="stats">📊 Stats</button>
 </div>
 
@@ -347,6 +357,42 @@
     </div>
 
     <div class="status-banner" id="focusStatus"></div>
+  </div>
+</div>
+
+<!-- SYNC PANEL -->
+<div class="panel" id="panel-sync">
+  <div class="filter-body">
+    <div class="section-label">Cross-browser sync</div>
+    <div class="yt-note">Sync filters across Chrome, Edge &amp; Firefox with a secret code. Stats stay on each device.</div>
+
+    <div class="sync-warn" id="syncWarn" style="display:none">
+      ⚠ Sync backend not configured. Deploy it and set <strong>SYNC_ENDPOINT</strong> — see <strong>backend/README.md</strong>.
+    </div>
+
+    <div id="syncUnlinked">
+      <button class="sync-primary" id="syncCreateBtn">＋ Create sync code</button>
+      <div class="sync-or">— or link an existing code —</div>
+      <div class="input-row">
+        <input class="keyword-input" id="syncCodeInput" type="text" placeholder="ABCD-EFGH-JKLM-NPQR" maxlength="40" autocapitalize="characters"/>
+        <button class="add-btn" id="syncLinkBtn">↵</button>
+      </div>
+    </div>
+
+    <div id="syncLinked" style="display:none">
+      <div class="section-label">Your sync code</div>
+      <div class="sync-code-box">
+        <span id="syncCodeText">—</span>
+        <button class="clear-btn" id="syncCopyBtn">Copy</button>
+      </div>
+      <div class="yt-note">Save this code. Paste it into Sieve on another browser to sync. Anyone with it can read your filter lists.</div>
+      <div class="input-row" style="margin-top:12px">
+        <button class="sync-primary" id="syncNowBtn">⟳ Sync now</button>
+        <button class="clear-btn" id="syncUnlinkBtn">Unlink</button>
+      </div>
+    </div>
+
+    <div class="status-banner" id="syncStatus" style="margin-top:14px">Not linked.</div>
   </div>
 </div>
 
