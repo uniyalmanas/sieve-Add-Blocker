@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — Sieve</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    max-width: 720px; margin: 40px auto; padding: 0 20px;
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1a1a1a; background: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e6e6e6; background: #14160f; }
+    a { color: #c8f135; }
+    code { background: #222; }
+  }
+  h1 { font-size: 28px; margin-bottom: 4px; }
+  h2 { font-size: 20px; margin-top: 32px; }
+  .updated { color: #888; font-size: 14px; margin-top: 0; }
+  code { background: #f2f2f2; padding: 1px 5px; border-radius: 4px; font-size: 14px; }
+  ul { padding-left: 22px; }
+  li { margin: 6px 0; }
+  hr { border: none; border-top: 1px solid #ccc3; margin: 28px 0; }
+</style>
+</head>
+<body>
+
+<h1>Privacy Policy — Sieve</h1>
+<p class="updated">Last updated: 7 June 2026</p>
+
+<p>Sieve ("the extension") is a browser extension that filters distracting
+content (news headlines, topics, and YouTube elements) from the pages you
+visit. This policy explains exactly what data Sieve handles and what it does
+not.</p>
+
+<p><strong>Short version:</strong> Sieve does not collect, sell, or transmit
+your browsing activity. Everything runs on your device. The only data that ever
+leaves your machine is your <em>filter settings</em> — and only if <strong>you</strong>
+choose to turn on the optional sync feature.</p>
+
+<hr>
+
+<h2>What Sieve stores on your device</h2>
+<p>Sieve saves the following in your browser's local extension storage
+(<code>chrome.storage</code>):</p>
+<ul>
+  <li>The keywords and topics you choose to block</li>
+  <li>YouTube channel names you choose to block</li>
+  <li>Your YouTube element preferences (hide comments, Shorts, etc.)</li>
+  <li>Your Focus Mode schedule (days and hours)</li>
+  <li>Usage statistics shown in the popup (blocked counts, streak, a 7-day chart)</li>
+</ul>
+<p>This data stays in your browser. It is used only to make the extension work.</p>
+
+<h2>What Sieve does NOT do</h2>
+<ul>
+  <li>It does <strong>not</strong> collect your browsing history.</li>
+  <li>It does <strong>not</strong> track the pages you visit or send them anywhere.</li>
+  <li>It does <strong>not</strong> read, store, or transmit form data, passwords,
+      or page content beyond matching it against your own keyword list in memory.</li>
+  <li>It does <strong>not</strong> contain analytics, advertising, fingerprinting,
+      or third-party tracking code.</li>
+  <li>It does <strong>not</strong> sell or share any data with anyone.</li>
+</ul>
+
+<h2>Permissions, and why they're needed</h2>
+<ul>
+  <li><code>storage</code> — to save your filter settings and stats on your device.</li>
+  <li><code>activeTab</code> — to apply filtering to the page you're viewing.</li>
+  <li>Host access (<code>&lt;all_urls&gt;</code>) — Sieve filters content on
+      whatever sites you visit, so it needs permission to run on pages. It uses
+      this <strong>only</strong> to scan page text against your keyword list and
+      hide matching elements in your browser. No page content is recorded or
+      sent anywhere.</li>
+</ul>
+
+<h2>Optional sync (off by default)</h2>
+<p>Sieve includes an <strong>optional</strong> cross-browser sync feature. It is
+<strong>off unless you turn it on</strong> by creating or entering a sync code.</p>
+<p>If you enable sync:</p>
+<ul>
+  <li>Only your <strong>filter settings</strong> (keywords, blocked channels,
+      YouTube toggles, and Focus schedule) are uploaded.
+      <strong>Your statistics are never uploaded</strong> — they stay on each device.</li>
+  <li>Your browsing activity is <strong>never</strong> part of sync.</li>
+  <li>Data is stored on a <strong>Cloudflare Worker backend that you (or whoever
+      distributes your copy) deploy and control</strong> — there is no central
+      Sieve server operated by the developer.</li>
+  <li>Your sync code is <strong>never stored in plain text</strong> on the
+      server; settings are stored under a SHA-256 hash of the code. Treat your
+      code like a password.</li>
+  <li>You can stop syncing at any time by unlinking the code in the Sync tab.</li>
+</ul>
+
+<h2>Data retention &amp; deletion</h2>
+<ul>
+  <li><strong>On-device data:</strong> removed when you uninstall the extension,
+      or via your browser's "Clear data" for the extension.</li>
+  <li><strong>Synced settings:</strong> stored on the backend until overwritten.
+      To stop using sync, unlink your code in the Sync tab.</li>
+</ul>
+
+<h2>Children's privacy</h2>
+<p>Sieve is a general-purpose productivity tool and is not directed at children
+under 13. It collects no personal information.</p>
+
+<h2>Changes to this policy</h2>
+<p>If this policy changes, the "Last updated" date above will change and the
+revised policy will be published at the same URL.</p>
+
+<h2>Contact</h2>
+<p>Manas Uniyal — <a href="mailto:uniyalmanas@gmail.com">uniyalmanas@gmail.com</a></p>
+
+</body>
+</html>

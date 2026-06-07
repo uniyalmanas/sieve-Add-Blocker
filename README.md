@@ -88,6 +88,17 @@ activity. Your keyword and channel lists live in Chrome's local/synced storage.
 on the Cloudflare Worker backend **you** deploy, under a SHA-256 hash of your
 code. Your stats stay on each device. Sync is off until you turn it on.
 
+Full policy: [PRIVACY.md](PRIVACY.md) (a hostable HTML copy lives in
+[docs/privacy.html](docs/privacy.html) for GitHub Pages).
+
+---
+
+## Publishing
+
+Store listings, privacy-policy hosting, screenshots, and launch posts are all
+prepared in [store/PUBLISHING.md](store/PUBLISHING.md) — a step-by-step runbook
+from "deploy the backend" to "live in the Chrome Web Store & Firefox AMO".
+
 ---
 
 ## Status
