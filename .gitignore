@@ -15,3 +15,7 @@ backend/.wrangler/
 
 # Node
 node_modules/
+
+# Build artifacts / packaging
+*.zip
+_*.ps1
