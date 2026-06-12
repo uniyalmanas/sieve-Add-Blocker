@@ -4,6 +4,7 @@ let keywords = [];
 let channels = [];
 let ytSettings = {};
 let schedule = {};   // { enabled, days:[], start, end, strict }
+let aiSlop = {};     // { enabled, labels, phrases, domains:[] } — AI Slop Filter
 let enabled = true;
 
 // Rough estimate: each blocked item ~= 8 seconds of attention not lost.
@@ -65,6 +66,10 @@ const addBtn         = document.getElementById('addBtn');
 const clearBtn       = document.getElementById('clearBtn');
 const kwCount        = document.getElementById('kwCount');
 const enableToggle   = document.getElementById('enableToggle');
+const statusSub      = document.getElementById('statusSub');
+const statusDot      = document.getElementById('statusDot');
+const statusText     = document.getElementById('statusText');
+const toggleLabel    = document.getElementById('toggleLabel');
 const aliasHint      = document.getElementById('aliasHint');
 const resetStatsBtn  = document.getElementById('resetStats');
 const ytToggles      = document.getElementById('ytToggles');
@@ -81,6 +86,16 @@ const schedStrict    = document.getElementById('schedStrict');
 const schedHint      = document.getElementById('schedHint');
 const focusStatus    = document.getElementById('focusStatus');
 const dayRow         = document.getElementById('dayRow');
+const aiEnabled      = document.getElementById('aiEnabled');
+const aiConfig       = document.getElementById('aiConfig');
+const aiLabels       = document.getElementById('aiLabels');
+const aiPhrases      = document.getElementById('aiPhrases');
+const aiDomainInput  = document.getElementById('aiDomainInput');
+const aiDomainAddBtn = document.getElementById('aiDomainAddBtn');
+const aiDomainContainer = document.getElementById('aiDomainContainer');
+const aiDomainCount  = document.getElementById('aiDomainCount');
+const aiDomainClearBtn = document.getElementById('aiDomainClearBtn');
+const aiStatus       = document.getElementById('aiStatus');
 const syncWarn       = document.getElementById('syncWarn');
 const syncUnlinked   = document.getElementById('syncUnlinked');
 const syncLinked     = document.getElementById('syncLinked');
@@ -102,6 +117,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'stats') loadStats();
     if (tab.dataset.tab === 'focus') renderSchedule();
+    if (tab.dataset.tab === 'aislop') renderAiSlop();
     if (tab.dataset.tab === 'sync') renderSync();
   });
 });
@@ -126,6 +142,7 @@ function save() {
     blockedChannels: channels,
     ytSettings,
     schedule,
+    aiSlop,
   }, notifyTab);
   if (!applyingRemote) {
     syncState.lastModified = Date.now();
@@ -138,13 +155,24 @@ function notifyTab() {
   chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
     if (tabs[0]?.id) {
       chrome.tabs.sendMessage(tabs[0].id, {
-        type: 'KEYWORDS_UPDATED', keywords, enabled, channels, yt: ytSettings, schedule
+        type: 'KEYWORDS_UPDATED', keywords, enabled, channels, yt: ytSettings, schedule, aiSlop
       }).catch(() => {});
     }
   });
 }
 
 // ── Render ──
+// Reflect the master on/off state in the header so it's obvious at a glance
+// whether filtering is live (like uBlock's power button).
+function renderEnabledState() {
+  enableToggle.checked = enabled;
+  statusDot.classList.toggle('off', !enabled);
+  statusSub.classList.toggle('off', !enabled);
+  statusText.textContent = enabled ? 'filtering your internet' : 'paused — content visible';
+  toggleLabel.textContent = enabled ? 'ON' : 'OFF';
+  toggleLabel.classList.toggle('off', !enabled);
+}
+
 function syncPresetStates() {
   document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.classList.toggle('active', keywords.map(k=>k.toLowerCase()).includes(btn.dataset.kw.toLowerCase()));
@@ -300,7 +328,7 @@ function renderFocusStatus() {
 function applyLockState() {
   const locked = isLocked();
   enableToggle.disabled = locked;
-  [addBtn, clearBtn, chAddBtn, chClearBtn, schedEnabled, schedStrict, schedStart, schedEnd].forEach(el => { if (el) el.disabled = locked; });
+  [addBtn, clearBtn, chAddBtn, chClearBtn, schedEnabled, schedStrict, schedStart, schedEnd, aiEnabled, aiLabels, aiPhrases, aiDomainAddBtn, aiDomainClearBtn].forEach(el => { if (el) el.disabled = locked; });
   dayRow.querySelectorAll('.day-btn').forEach(b => { b.disabled = locked; });
   document.querySelectorAll('.preset-btn, .tag-remove').forEach(b => { b.disabled = locked; });
 }
@@ -324,6 +352,90 @@ dayRow.addEventListener('click', e => {
   save(); renderSchedule();
 });
 
+// ── AI Slop Filter ──
+function aiDomains() {
+  return Array.isArray(aiSlop.domains) ? aiSlop.domains : [];
+}
+
+function renderAiDomains() {
+  const domains = aiDomains();
+  aiDomainCount.textContent = domains.length;
+  if (!domains.length) {
+    aiDomainContainer.innerHTML = '<span class="empty-state">No domains blocked.</span>';
+    return;
+  }
+  aiDomainContainer.innerHTML = '';
+  domains.forEach((d, i) => {
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.innerHTML = `<span>${escapeHtml(d)}</span><button class="tag-remove" data-index="${i}">×</button>`;
+    aiDomainContainer.appendChild(tag);
+  });
+}
+
+function renderAiStatus() {
+  if (!aiSlop.enabled) {
+    aiStatus.className = 'status-banner';
+    aiStatus.textContent = 'AI Slop Filter is off.';
+    return;
+  }
+  const signals = [];
+  if (aiSlop.labels  !== false) signals.push('platform labels');
+  if (aiSlop.phrases !== false) signals.push('AI phrases');
+  if (aiDomains().length) signals.push(aiDomains().length + ' site' + (aiDomains().length > 1 ? 's' : ''));
+  aiStatus.className = 'status-banner on';
+  aiStatus.textContent = signals.length
+    ? '🤖 Filtering: ' + signals.join(' · ')
+    : '🤖 On, but no signals selected — pick at least one.';
+}
+
+function renderAiSlop() {
+  aiEnabled.checked = !!aiSlop.enabled;
+  aiLabels.checked  = aiSlop.labels  !== false; // default on
+  aiPhrases.checked = aiSlop.phrases !== false; // default on
+  aiConfig.style.opacity = aiSlop.enabled ? '1' : '.4';
+  aiConfig.style.pointerEvents = aiSlop.enabled ? 'auto' : 'none';
+  renderAiDomains();
+  renderAiStatus();
+}
+
+function normalizeDomain(raw) {
+  return String(raw || '').trim().toLowerCase()
+    .replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
+}
+
+function addAiDomain(raw) {
+  const d = normalizeDomain(raw);
+  if (!d || !d.includes('.')) return; // require a dotted domain
+  const domains = aiDomains();
+  if (domains.map(x => x.toLowerCase()).includes(d)) return;
+  domains.push(d);
+  aiSlop.domains = domains;
+  save(); renderAiDomains(); renderAiStatus();
+}
+
+function removeAiDomain(i) {
+  const domains = aiDomains();
+  domains.splice(i, 1);
+  aiSlop.domains = domains;
+  save(); renderAiDomains(); renderAiStatus();
+}
+
+aiEnabled.addEventListener('change', () => {
+  if (isLocked()) { aiEnabled.checked = !!aiSlop.enabled; return; }
+  aiSlop.enabled = aiEnabled.checked;
+  save(); renderAiSlop();
+});
+aiLabels.addEventListener('change', () => { aiSlop.labels = aiLabels.checked; save(); renderAiStatus(); });
+aiPhrases.addEventListener('change', () => { aiSlop.phrases = aiPhrases.checked; save(); renderAiStatus(); });
+aiDomainAddBtn.addEventListener('click', () => { addAiDomain(aiDomainInput.value); aiDomainInput.value = ''; aiDomainInput.focus(); });
+aiDomainInput.addEventListener('keydown', e => { if (e.key === 'Enter') { addAiDomain(aiDomainInput.value); aiDomainInput.value = ''; } });
+aiDomainContainer.addEventListener('click', e => {
+  const btn = e.target.closest('.tag-remove');
+  if (btn) removeAiDomain(parseInt(btn.dataset.index));
+});
+aiDomainClearBtn.addEventListener('click', () => { if (!aiDomains().length) return; aiSlop.domains = []; save(); renderAiDomains(); renderAiStatus(); });
+
 // ── Cross-browser sync ──
 function persistSyncState() {
   chrome.storage.local.set({ syncState });
@@ -336,6 +448,7 @@ function currentSettings() {
     blockedChannels: channels,
     ytSettings,
     schedule,
+    aiSlop,
   };
 }
 
@@ -348,13 +461,16 @@ function applySettings(data) {
   channels   = Array.isArray(data.blockedChannels) ? data.blockedChannels : [];
   ytSettings = data.ytSettings || {};
   schedule   = data.schedule || {};
+  aiSlop     = data.aiSlop || {};
   save();              // persists locally + notifies tabs; no push (guarded)
   applyingRemote = false;
   enableToggle.checked = enabled;
+  renderEnabledState();
   renderTags();
   renderYtToggles();
   renderChannels();
   renderSchedule();
+  renderAiSlop();
 }
 
 // High-entropy, human-friendly code: 16 chars from an unambiguous alphabet.
@@ -493,6 +609,7 @@ clearBtn.addEventListener('click', () => { if (!keywords.length) return; keyword
 enableToggle.addEventListener('change', () => {
   if (isLocked()) { enableToggle.checked = true; return; } // strict mode: can't disable
   enabled = enableToggle.checked;
+  renderEnabledState();
   save();
 });
 
@@ -598,17 +715,20 @@ resetStatsBtn.addEventListener('click', () => {
 });
 
 // ── Init ──
-chrome.storage.sync.get(['blockedKeywords','filterEnabled','blockedChannels','ytSettings','schedule'], result => {
+chrome.storage.sync.get(['blockedKeywords','filterEnabled','blockedChannels','ytSettings','schedule','aiSlop'], result => {
   keywords   = result.blockedKeywords || [];
   enabled    = result.filterEnabled !== false;
   channels   = result.blockedChannels || [];
   ytSettings = result.ytSettings || {};
   schedule   = result.schedule || {};
+  aiSlop     = result.aiSlop || {};
   enableToggle.checked = enabled;
+  renderEnabledState();
   renderTags();
   renderYtToggles();
   renderChannels();
   renderSchedule();
+  renderAiSlop();
 
   // Load sync link state, then pull latest from the backend (if linked).
   chrome.storage.local.get(['syncState'], r => {

@@ -49,9 +49,13 @@
     .header-title { font-size: 15px; font-weight: 800; letter-spacing: 0.06em; }
     .header-sub { font-size: 9px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 1px; }
     .status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); display: inline-block; margin-right: 4px; animation: pulse 2s infinite; }
+    .status-dot.off { background: var(--muted); animation: none; }
+    .header-sub.off { color: var(--danger); }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-    .toggle-wrap { margin-left: auto; }
+    .toggle-wrap { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .toggle-label { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: .1em; color: var(--accent); min-width: 22px; text-align: right; }
+    .toggle-label.off { color: var(--danger); }
     .toggle { position: relative; width: 36px; height: 20px; }
     .toggle input { opacity:0; width:0; height:0; }
     .slider { position:absolute; inset:0; background:var(--border); border-radius:20px; cursor:pointer; transition:.2s; }
@@ -220,10 +224,11 @@
   </div>
   <div>
     <div class="header-title">WINNOW</div>
-    <div class="header-sub"><span class="status-dot"></span>filtering your internet</div>
+    <div class="header-sub" id="statusSub"><span class="status-dot" id="statusDot"></span><span id="statusText">filtering your internet</span></div>
   </div>
   <div class="toggle-wrap">
-    <label class="toggle">
+    <span class="toggle-label" id="toggleLabel">ON</span>
+    <label class="toggle" title="Turn filtering on/off">
       <input type="checkbox" id="enableToggle" checked/>
       <span class="slider"></span>
     </label>
@@ -234,6 +239,7 @@
   <button class="tab active" data-tab="filter">⚙ Filter</button>
   <button class="tab" data-tab="youtube">▶ YT</button>
   <button class="tab" data-tab="focus">⏱ Focus</button>
+  <button class="tab" data-tab="aislop">🤖 AI</button>
   <button class="tab" data-tab="sync">☁ Sync</button>
   <button class="tab" data-tab="stats">📊 Stats</button>
 </div>
@@ -357,6 +363,62 @@
     </div>
 
     <div class="status-banner" id="focusStatus"></div>
+  </div>
+</div>
+
+<!-- AI SLOP PANEL -->
+<div class="panel" id="panel-aislop">
+  <div class="filter-body">
+    <div class="yt-row" style="border-bottom:1px solid var(--border)">
+      <div>
+        <div class="yt-row-label">🤖 AI Slop Filter</div>
+        <div class="yt-row-desc">Hide AI-generated clutter as you browse.</div>
+      </div>
+      <label class="toggle" title="Turn the AI Slop Filter on/off">
+        <input type="checkbox" id="aiEnabled"/>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div id="aiConfig" style="opacity:.4; pointer-events:none">
+      <div class="yt-note" style="margin-top:12px">
+        Winnow doesn't guess whether something is AI. It hides honest, reliable signals — so it won't wrongly flag a real person's post.
+      </div>
+
+      <div class="section-label" style="margin-top:6px">Signals to filter</div>
+      <div class="yt-toggles">
+        <div class="yt-row">
+          <div>
+            <div class="yt-row-label">Platform AI labels</div>
+            <div class="yt-row-desc">Hide posts a platform itself tags “AI generated” (Instagram, YouTube, TikTok…).</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="aiLabels" checked/><span class="slider"></span></label>
+        </div>
+        <div class="yt-row">
+          <div>
+            <div class="yt-row-label">Tell-tale AI phrases</div>
+            <div class="yt-row-desc">Hide content with giveaway phrases like “As an AI language model…”.</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="aiPhrases" checked/><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top:18px">Block AI-content-farm sites</div>
+      <div class="yt-note">Add domains of sites you know churn out AI slop. Their links get hidden in feeds & search.</div>
+      <div class="input-row">
+        <input class="keyword-input" id="aiDomainInput" type="text" placeholder="e.g. ai-spam-site.com" maxlength="80"/>
+        <button class="add-btn" id="aiDomainAddBtn">+</button>
+      </div>
+      <div class="tags" id="aiDomainContainer">
+        <span class="empty-state">No domains blocked.</span>
+      </div>
+    </div>
+
+    <div class="status-banner" id="aiStatus" style="margin-top:16px"></div>
+  </div>
+  <div class="footer">
+    <div class="count">Blocking <span id="aiDomainCount">0</span> AI-farm sites</div>
+    <button class="clear-btn" id="aiDomainClearBtn">Clear all</button>
   </div>
 </div>
 
