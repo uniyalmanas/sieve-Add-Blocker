@@ -404,7 +404,16 @@
       </div>
 
       <div class="section-label" style="margin-top:18px">Block AI-content-farm sites</div>
-      <div class="yt-note">Add domains of sites you know churn out AI slop. Their links get hidden in feeds & search.</div>
+      <div class="yt-row" style="border-bottom:1px solid var(--border)">
+        <div>
+          <div class="yt-row-label">Use built-in blocklist</div>
+          <div class="yt-row-desc">Hide links from <span id="aiBundledCount">a community list of</span> known AI-content-farm sites. No typing needed.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="aiUseBundled"/><span class="slider"></span></label>
+      </div>
+
+      <div class="section-label" style="margin-top:14px">Add your own sites</div>
+      <div class="yt-note">See an AI-slop site? Paste its address to hide its links in feeds &amp; search.</div>
       <div class="input-row">
         <input class="keyword-input" id="aiDomainInput" type="text" placeholder="e.g. ai-spam-site.com" maxlength="80"/>
         <button class="add-btn" id="aiDomainAddBtn">+</button>
@@ -507,6 +516,7 @@
   </div>
 </div>
 
+<script src="ai-blocklist.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>

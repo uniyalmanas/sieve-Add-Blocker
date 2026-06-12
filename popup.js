@@ -90,6 +90,8 @@ const aiEnabled      = document.getElementById('aiEnabled');
 const aiConfig       = document.getElementById('aiConfig');
 const aiLabels       = document.getElementById('aiLabels');
 const aiPhrases      = document.getElementById('aiPhrases');
+const aiUseBundled   = document.getElementById('aiUseBundled');
+const aiBundledCount = document.getElementById('aiBundledCount');
 const aiDomainInput  = document.getElementById('aiDomainInput');
 const aiDomainAddBtn = document.getElementById('aiDomainAddBtn');
 const aiDomainContainer = document.getElementById('aiDomainContainer');
@@ -328,7 +330,7 @@ function renderFocusStatus() {
 function applyLockState() {
   const locked = isLocked();
   enableToggle.disabled = locked;
-  [addBtn, clearBtn, chAddBtn, chClearBtn, schedEnabled, schedStrict, schedStart, schedEnd, aiEnabled, aiLabels, aiPhrases, aiDomainAddBtn, aiDomainClearBtn].forEach(el => { if (el) el.disabled = locked; });
+  [addBtn, clearBtn, chAddBtn, chClearBtn, schedEnabled, schedStrict, schedStart, schedEnd, aiEnabled, aiLabels, aiPhrases, aiUseBundled, aiDomainAddBtn, aiDomainClearBtn].forEach(el => { if (el) el.disabled = locked; });
   dayRow.querySelectorAll('.day-btn').forEach(b => { b.disabled = locked; });
   document.querySelectorAll('.preset-btn, .tag-remove').forEach(b => { b.disabled = locked; });
 }
@@ -373,6 +375,10 @@ function renderAiDomains() {
   });
 }
 
+function bundledCount() {
+  return Array.isArray(self.WINNOW_AI_BLOCKLIST) ? self.WINNOW_AI_BLOCKLIST.length : 0;
+}
+
 function renderAiStatus() {
   if (!aiSlop.enabled) {
     aiStatus.className = 'status-banner';
@@ -382,7 +388,8 @@ function renderAiStatus() {
   const signals = [];
   if (aiSlop.labels  !== false) signals.push('platform labels');
   if (aiSlop.phrases !== false) signals.push('AI phrases');
-  if (aiDomains().length) signals.push(aiDomains().length + ' site' + (aiDomains().length > 1 ? 's' : ''));
+  const siteCount = aiDomains().length + (aiSlop.useBundled ? bundledCount() : 0);
+  if (siteCount) signals.push(siteCount.toLocaleString() + ' site' + (siteCount > 1 ? 's' : ''));
   aiStatus.className = 'status-banner on';
   aiStatus.textContent = signals.length
     ? '🤖 Filtering: ' + signals.join(' · ')
@@ -393,6 +400,9 @@ function renderAiSlop() {
   aiEnabled.checked = !!aiSlop.enabled;
   aiLabels.checked  = aiSlop.labels  !== false; // default on
   aiPhrases.checked = aiSlop.phrases !== false; // default on
+  aiUseBundled.checked = !!aiSlop.useBundled;   // default OFF (opt-in)
+  const n = bundledCount();
+  aiBundledCount.textContent = n ? n.toLocaleString() : 'a community list of';
   aiConfig.style.opacity = aiSlop.enabled ? '1' : '.4';
   aiConfig.style.pointerEvents = aiSlop.enabled ? 'auto' : 'none';
   renderAiDomains();
@@ -428,6 +438,7 @@ aiEnabled.addEventListener('change', () => {
 });
 aiLabels.addEventListener('change', () => { aiSlop.labels = aiLabels.checked; save(); renderAiStatus(); });
 aiPhrases.addEventListener('change', () => { aiSlop.phrases = aiPhrases.checked; save(); renderAiStatus(); });
+aiUseBundled.addEventListener('change', () => { aiSlop.useBundled = aiUseBundled.checked; save(); renderAiStatus(); });
 aiDomainAddBtn.addEventListener('click', () => { addAiDomain(aiDomainInput.value); aiDomainInput.value = ''; aiDomainInput.focus(); });
 aiDomainInput.addEventListener('keydown', e => { if (e.key === 'Enter') { addAiDomain(aiDomainInput.value); aiDomainInput.value = ''; } });
 aiDomainContainer.addEventListener('click', e => {

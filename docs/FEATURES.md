@@ -84,16 +84,35 @@ containing conservative, low-false-positive tells such as:
 been edited leaves no tells and won't be caught — that's expected. The phrase
 list is intentionally short and specific to avoid hiding legitimate content.
 
-#### 3. AI-content-farm domain blocklist (default: empty)
+#### 3. AI-content-farm sites (two ways)
 
-You add domains of sites you know churn out AI slop (e.g. `ai-spam-site.com`).
-Winnow hides links to those domains in feeds and search results.
+Hides links to AI-content-farm sites in feeds and search results. There are two
+sources, used together:
 
+**a) Built-in blocklist (one toggle, ~2,200 sites)** — flip *"Use built-in
+blocklist"* and Winnow blocks links to a large, community-curated list of known
+AI-content-farm domains with **zero typing**. It's **off by default** (opt-in),
+so it never surprises anyone and keeps store review clean.
+- Source: [laylavish/uBlockOrigin-HUGE-AI-Blocklist](https://github.com/laylavish/uBlockOrigin-HUGE-AI-Blocklist),
+  licensed **CC0-1.0** (public domain), bundled as `ai-blocklist.js`.
+- It's a *snapshot* — it doesn't auto-update. Refreshing it ships with app updates.
+- The list is opinionated/image-focused and may include sites you consider fine;
+  that's why it's opt-in and separate from your own list.
+
+**b) Your own sites (manual)** — see an AI-slop site? Paste its address and
+Winnow hides its links from then on. This is the reactive, power-user path:
+*see a bad site → copy its address → add it → never see it again.*
+
+Both sources share the same matching rules:
 - Matching is **subdomain-aware**: blocking `example.com` also hides
-  `news.example.com`.
+  `news.example.com`. (Lookup is O(domain labels) via a Set, so even ~2,200
+  bundled domains add no measurable cost.)
 - Input is auto-normalized — `https://`, `www.`, and trailing paths are stripped,
   so `https://www.example.com/foo` becomes `example.com`.
 - A domain must contain a dot to be accepted.
+
+Only your *toggle choice* and your *own* domains sync across browsers — the
+2,200-entry bundled list ships with the extension, it is never transmitted.
 
 ### How it integrates
 
@@ -104,7 +123,8 @@ Winnow hides links to those domains in feeds and search results.
 - Blocked items feed the **Stats** counters, labeled `AI-labeled`, `AI slop`, or
   `AI-farm site` so you can see which signal caught them.
 - Settings are stored under the `aiSlop` key in `chrome.storage.sync`:
-  `{ enabled, labels, phrases, domains: [] }`.
+  `{ enabled, labels, phrases, useBundled, domains: [] }`. The `useBundled`
+  boolean opts into the ~2,200-site bundled list; `domains` holds your own.
 
 ### What it does NOT do
 

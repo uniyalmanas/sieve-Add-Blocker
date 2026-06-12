@@ -237,19 +237,36 @@ function aiSlopMatch(text, href) {
     }
   }
 
-  // 3. User-managed AI-content-farm domain blocklist.
-  const domains = Array.isArray(aiSlop.domains) ? aiSlop.domains : [];
-  if (domains.length && href) {
+  // 3. User-managed AI-content-farm domain blocklist (+ optional bundled list).
+  if (aiDomainSet && aiDomainSet.size && href) {
     let host = '';
-    try { host = new URL(href, location.href).hostname.toLowerCase(); } catch { host = ''; }
+    try { host = new URL(href, location.href).hostname.toLowerCase().replace(/^www\./, ''); } catch { host = ''; }
     if (host) {
-      for (const d of domains) {
-        const dom = String(d || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
-        if (dom && (host === dom || host.endsWith('.' + dom))) return 'AI-farm site';
+      // Check the host and each parent domain against the Set (O(labels), not O(list)).
+      const parts = host.split('.');
+      for (let i = 0; i < parts.length - 1; i++) {
+        const candidate = parts.slice(i).join('.');
+        if (aiDomainSet.has(candidate)) return 'AI-farm site';
       }
     }
   }
   return null;
+}
+
+// Build the active domain Set from the user's custom domains plus, if enabled,
+// the bundled CC0 AI-content-farm list (exposed by ai-blocklist.js).
+let aiDomainSet = null;
+function rebuildAiDomainSet() {
+  const set = new Set();
+  const custom = Array.isArray(aiSlop.domains) ? aiSlop.domains : [];
+  custom.forEach(d => {
+    const dom = String(d || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
+    if (dom) set.add(dom);
+  });
+  if (aiSlop.useBundled && Array.isArray(self.WINNOW_AI_BLOCKLIST)) {
+    self.WINNOW_AI_BLOCKLIST.forEach(d => { if (d) set.add(d); });
+  }
+  aiDomainSet = set;
 }
 
 function normalize(text) {
@@ -360,6 +377,7 @@ function aiSlopActive() {
   if (!aiSlop || !aiSlop.enabled) return false;
   if (aiSlop.labels !== false) return true;
   if (aiSlop.phrases !== false) return true;
+  if (aiSlop.useBundled && Array.isArray(self.WINNOW_AI_BLOCKLIST) && self.WINNOW_AI_BLOCKLIST.length) return true;
   return Array.isArray(aiSlop.domains) && aiSlop.domains.length > 0;
 }
 
@@ -460,6 +478,7 @@ function init() {
       ytSettings = result.ytSettings || {};
       schedule = result.schedule || {};
       aiSlop = result.aiSlop || {};
+      rebuildAiDomainSet();
       compiledMatchers = compileMatchers(blockedKeywords);
       lastActive = isActive();
       applyYtSettings();
@@ -477,6 +496,7 @@ chrome.runtime.onMessage.addListener((msg) => {
     ytSettings = msg.yt || {};
     if (msg.schedule !== undefined) schedule = msg.schedule || {};
     if (msg.aiSlop !== undefined) aiSlop = msg.aiSlop || {};
+    rebuildAiDomainSet();
     compiledMatchers = compileMatchers(blockedKeywords);
     lastActive = isActive();
     applyYtSettings();
@@ -500,6 +520,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (changes.ytSettings) ytSettings = changes.ytSettings.newValue || {};
   if (changes.schedule) schedule = changes.schedule.newValue || {};
   if (changes.aiSlop) aiSlop = changes.aiSlop.newValue || {};
+  rebuildAiDomainSet();
   lastActive = isActive();
   applyYtSettings();
   unblockAll();
